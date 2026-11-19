@@ -21,6 +21,7 @@ la API por HTTP. Se levanta completo con Docker: base de datos + API + front.
 git clone https://github.com/kevinandresforero/AbastecimientoPorTiendaRetail.git abastecimiento_retail
 cd abastecimiento_retail
 cp .env.example .env          # Windows: copy .env.example .env
+docker compose pull db
 docker compose up -d --build  # la primera vez descarga ~2 GB de imágenes y tarda 1-2 min
 ```
 
