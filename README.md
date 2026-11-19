@@ -18,7 +18,7 @@ la API por HTTP. Se levanta completo con Docker: base de datos + API + front.
 **Requisito:** tener Docker instalado (ver [3. Instalación de Docker](#3-instalación-de-docker)).
 
 ```bash
-git clone <URL-del-repositorio> abastecimiento_retail
+git clone [<URL-del-repositorio>](https://github.com/kevinandresforero/AbastecimientoPorTiendaRetail.git) abastecimiento_retail
 cd abastecimiento_retail
 cp .env.example .env          # Windows: copy .env.example .env
 docker compose up -d --build  # la primera vez descarga ~2 GB de imágenes y tarda 1-2 min
