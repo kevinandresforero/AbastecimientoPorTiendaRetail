@@ -702,3 +702,302 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    ALTER TABLE [nodoscomerciales].[NodosComerciales] ADD [TiendaId] int NOT NULL DEFAULT 1;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 1;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 2;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 3;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 4;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 5;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 6;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 7;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 8;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 9;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 10;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 11;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 12;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 13;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 14;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 15;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 16;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 17;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'UPDATE [nodoscomerciales].[NodosComerciales] SET [TiendaId] = 1
+    WHERE [Id] = 18;
+    SELECT @@ROWCOUNT');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'ConceptoComercialId', N'NodoPadreId', N'PorcentajeParticipacion', N'TiendaId') AND [object_id] = OBJECT_ID(N'[nodoscomerciales].[NodosComerciales]'))
+        SET IDENTITY_INSERT [nodoscomerciales].[NodosComerciales] ON;
+    EXEC(N'INSERT INTO [nodoscomerciales].[NodosComerciales] ([Id], [ConceptoComercialId], [NodoPadreId], [PorcentajeParticipacion], [TiendaId])
+    VALUES (2001, 1, NULL, 1.0, 2),
+    (3001, 1, NULL, 1.0, 3),
+    (2002, 2, 2001, 0.3, 2),
+    (3002, 2, 3001, 0.3, 3),
+    (2003, 3, 2002, 0.94, 2),
+    (2004, 4, 2002, 0.06, 2),
+    (3003, 3, 3002, 0.94, 3),
+    (3004, 4, 3002, 0.06, 3),
+    (2005, 5, 2003, 1.0, 2),
+    (2015, 5, 2004, 1.0, 2),
+    (3005, 5, 3003, 1.0, 3),
+    (3015, 5, 3004, 1.0, 3),
+    (2006, 6, 2005, 1.0, 2),
+    (2016, 6, 2015, 1.0, 2),
+    (3006, 6, 3005, 1.0, 3),
+    (3016, 6, 3015, 1.0, 3),
+    (2007, 7, 2006, 0.4, 2),
+    (2008, 8, 2006, 0.45, 2),
+    (2009, 9, 2006, 0.15, 2),
+    (2017, 7, 2016, 1.0, 2),
+    (3007, 7, 3006, 0.4, 3),
+    (3008, 8, 3006, 0.45, 3),
+    (3009, 9, 3006, 0.15, 3),
+    (3017, 7, 3016, 1.0, 3),
+    (2010, 10, 2007, 0.5, 2),
+    (2011, 11, 2007, 0.5, 2),
+    (2012, 12, 2008, 0.6, 2),
+    (2013, 13, 2008, 0.4, 2),
+    (2014, 14, 2009, 1.0, 2),
+    (2018, 15, 2017, 1.0, 2),
+    (3010, 10, 3007, 0.5, 3),
+    (3011, 11, 3007, 0.5, 3),
+    (3012, 12, 3008, 0.6, 3),
+    (3013, 13, 3008, 0.4, 3),
+    (3014, 14, 3009, 1.0, 3),
+    (3018, 15, 3017, 1.0, 3)');
+    IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'ConceptoComercialId', N'NodoPadreId', N'PorcentajeParticipacion', N'TiendaId') AND [object_id] = OBJECT_ID(N'[nodoscomerciales].[NodosComerciales]'))
+        SET IDENTITY_INSERT [nodoscomerciales].[NodosComerciales] OFF;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    CREATE INDEX [IX_NodosComerciales_TiendaId] ON [nodoscomerciales].[NodosComerciales] ([TiendaId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz] ON [nodoscomerciales].[NodosComerciales] ([TiendaId], [ConceptoComercialId]) WHERE [NodoPadreId] IS NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    ALTER TABLE [nodoscomerciales].[NodosComerciales] ADD CONSTRAINT [FK_NodosComerciales_Tiendas_TiendaId] FOREIGN KEY ([TiendaId]) REFERENCES [tiendas].[Tiendas] ([Id]) ON DELETE NO ACTION;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261119192632_ArbolPorTienda'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261119192632_ArbolPorTienda', N'8.0.11');
+END;
+GO
+
+COMMIT;
+GO
+

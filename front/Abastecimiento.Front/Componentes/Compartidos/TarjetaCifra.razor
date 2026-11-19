@@ -1,0 +1,14 @@
+<article class="tarjeta-cifra @(Destacada ? "destacada" : null)">
+    @if (!string.IsNullOrWhiteSpace(NombreIcono))
+    {
+        <span class="tarjeta-cifra-icono"><Icono Nombre="@NombreIcono" /></span>
+    }
+    <div>
+        <p class="tarjeta-cifra-etiqueta">@Etiqueta</p>
+        <p class="tarjeta-cifra-valor" title="@Tooltip">@Valor</p>
+        @if (!string.IsNullOrWhiteSpace(Detalle))
+        {
+            <p class="tarjeta-cifra-detalle">@Detalle</p>
+        }
+    </div>
+</article>

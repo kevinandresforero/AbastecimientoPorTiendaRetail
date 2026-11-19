@@ -1,0 +1,13 @@
+<label class="form-label" for="@Id">@Etiqueta</label>
+<InputSelect TValue="int?" id="@Id" class="form-select" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression"
+             disabled="@Deshabilitado">
+    <option value="">@TextoVacio</option>
+    @foreach (var opcion in Opciones)
+    {
+        <option value="@opcion.Id">@opcion.Nombre</option>
+    }
+</InputSelect>
+@if (ValueExpression is not null)
+{
+    <ValidationMessage For="ValueExpression" />
+}

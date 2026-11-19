@@ -4,6 +4,7 @@ using Abastecimiento.Dominio.Entidades;
 using Abastecimiento.Dominio.Entidades.Tiendas;
 using Abastecimiento.Dominio.Excepciones;
 using Abastecimiento.Dominio.Interfaces;
+using Abastecimiento.Dominio.Reglas;
 
 namespace Abastecimiento.Aplicacion.Servicios;
 
@@ -13,9 +14,6 @@ namespace Abastecimiento.Aplicacion.Servicios;
 /// </summary>
 public sealed class ServicioCatalogos(ICatalogoRepositorioFabrica fabrica, IUnidadDeTrabajo unidadDeTrabajo) : ICatalogoServicio
 {
-    private const int LongitudNombre = 50;
-    private const int LongitudNombreResponsableVisual = 100;
-
     public async Task<IReadOnlyList<CatalogoRespuesta>> ListarAsync<T>(CancellationToken ct) where T : EntidadCatalogo
     {
         var elementos = await Repositorio<T>().ObtenerTodosAsync(ct);
@@ -26,7 +24,9 @@ public sealed class ServicioCatalogos(ICatalogoRepositorioFabrica fabrica, IUnid
         where T : EntidadCatalogo, new()
     {
         var nombre = solicitud.Nombre.Trim();
-        var longitudMaxima = typeof(T) == typeof(ResponsableVisual) ? LongitudNombreResponsableVisual : LongitudNombre;
+        var longitudMaxima = typeof(T) == typeof(ResponsableVisual)
+            ? LongitudesCampo.NombreResponsableVisual
+            : LongitudesCampo.NombreCatalogo;
 
         if (nombre.Length == 0 || nombre.Length > longitudMaxima)
         {

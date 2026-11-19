@@ -1,0 +1,30 @@
+@inherits PaginaBase
+
+<Dialogo Titulo="Copiar árbol comercial">
+    <p>
+        Se copiarán los conceptos y porcentajes de la tienda origen en la tienda
+        <strong>@CodigoHannaDestino</strong>. La copia es independiente: los cambios posteriores en una tienda no
+        afectan a la otra.
+    </p>
+
+    <MensajeError Error="error" />
+
+    <div class="mb-3">
+        <label class="form-label" for="tienda-origen">Tienda origen</label>
+        <select id="tienda-origen" class="form-select" @bind="codigoOrigen">
+            @foreach (var tienda in Origenes)
+            {
+                <option value="@tienda.CodigoHanna">@tienda.CodigoHanna · @tienda.Nombre</option>
+            }
+        </select>
+    </div>
+
+    <p class="form-text">La copia solo se permite si la tienda destino no tiene árbol.</p>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-primary" @onclick="CancelarAsync">Cancelar</button>
+        <button type="button" class="btn btn-primary" disabled="@(enviando || codigoOrigen is null)" @onclick="CopiarAsync">
+            @(enviando ? "Copiando…" : "Copiar árbol")
+        </button>
+    </div>
+</Dialogo>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Abastecimiento.Dominio.Reglas;
 
 namespace Abastecimiento.Aplicacion.Dtos.ArbolComercial;
 
@@ -33,6 +34,12 @@ public sealed record NodoArbolRespuesta(
     int? UnidadesPorEspacio,
     bool EsHoja);
 
+/// <summary>Resultado de copiar el arbol comercial de una tienda a otra.</summary>
+/// <param name="CodigoHannaOrigen">Tienda de la que se copio.</param>
+/// <param name="CodigoHannaDestino">Tienda que recibio la copia.</param>
+/// <param name="NodosCopiados">Cantidad de nodos clonados.</param>
+public sealed record CopiaArbolRespuesta(int CodigoHannaOrigen, int CodigoHannaDestino, int NodosCopiados);
+
 /// <summary>Datos para crear un concepto comercial.</summary>
 public sealed record CrearConceptoSolicitud
 {
@@ -40,7 +47,7 @@ public sealed record CrearConceptoSolicitud
     public int NivelJerarquiaId { get; init; }
 
     [Required]
-    [StringLength(100)]
+    [StringLength(LongitudesCampo.NombreConceptoComercial)]
     public string Nombre { get; init; } = string.Empty;
 
     /// <summary>Obligatorio (mayor que 0) solo en el nivel hoja; debe omitirse en los demas niveles.</summary>

@@ -1,4 +1,6 @@
 using Abastecimiento.Dominio.Entidades.ArbolComercial;
+using Abastecimiento.Dominio.Entidades.Tiendas;
+using Abastecimiento.Infraestructura.Persistencia.Semilla;
 using Abastecimiento.Infraestructura.Persistencia;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -69,7 +71,8 @@ public class ModeloEfPruebas
             "UQ_MarcasTienda_Nombre", "UQ_Regionales_Nombre", "UQ_TiposTienda_Nombre", "UQ_ResponsablesVisuales_Nombre",
             "UQ_TiposEspacio_Nombre", "UQ_Roles_Nombre", "UQ_Usuarios_NombreUsuario", "UQ_Usuarios_Correo",
             "IX_UsuariosRoles_RolId", "UQ_SesionesToken_Jti", "UQ_SesionesToken_HashTokenRefresco",
-            "IX_SesionesToken_UsuarioId_FechaExpiracionUtc", "IX_SesionesToken_ReemplazadaPorSesionId"
+            "IX_SesionesToken_UsuarioId_FechaExpiracionUtc", "IX_SesionesToken_ReemplazadaPorSesionId",
+            "IX_NodosComerciales_TiendaId", "UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz"
         ];
 
         Assert.All(esperados, nombre => Assert.Contains(nombre, indices));
@@ -141,8 +144,69 @@ public class ModeloEfPruebas
         Assert.Equal(10, Conteo<Abastecimiento.Dominio.Entidades.Tiendas.EspacioTienda>());
         Assert.Equal(7, Conteo<NivelJerarquia>());
         Assert.Equal(15, Conteo<ConceptoComercial>());
-        Assert.Equal(18, Conteo<NodoComercial>());
+        Assert.Equal(54, Conteo<NodoComercial>());
         Assert.Equal(4, Conteo<Abastecimiento.Dominio.Entidades.Seguridad.Rol>());
         Assert.Equal(0, Conteo<Abastecimiento.Dominio.Entidades.Seguridad.Usuario>());
+    }
+
+    // ---- Arbol comercial por tienda (spec de datos §4.2 y §7.2) ----
+
+    [Fact]
+    public void ElNodoTieneTiendaIdRequeridoConFkRestrictATiendas()
+    {
+        using var contexto = CrearContexto();
+        var nodo = Modelo(contexto).FindEntityType(typeof(NodoComercial))!;
+
+        Assert.False(nodo.FindProperty(nameof(NodoComercial.TiendaId))!.IsNullable);
+
+        var fk = nodo.GetForeignKeys().Single(f => f.PrincipalEntityType.ClrType == typeof(Tienda));
+        Assert.Equal(DeleteBehavior.Restrict, fk.DeleteBehavior);
+        Assert.Equal("FK_NodosComerciales_Tiendas_TiendaId", fk.GetConstraintName());
+        Assert.Equal("tiendas", fk.PrincipalEntityType.GetSchema());
+    }
+
+    [Fact]
+    public void LaUnidadDeNegocioNoSeRepiteEnLaMismaTienda()
+    {
+        using var contexto = CrearContexto();
+
+        var indice = Modelo(contexto).FindEntityType(typeof(NodoComercial))!
+            .GetIndexes()
+            .Single(i => i.GetDatabaseName() == "UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz");
+
+        Assert.True(indice.IsUnique);
+        Assert.Equal("[NodoPadreId] IS NULL", indice.GetFilter());
+        Assert.Equal(
+            new[] { nameof(NodoComercial.TiendaId), nameof(NodoComercial.ConceptoComercialId) },
+            indice.Properties.Select(p => p.Name).ToArray());
+    }
+
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(2, 2000)]
+    [InlineData(3, 3000)]
+    public void LaSemillaTieneUnArbolIdenticoPorTienda(int tiendaId, int desplazamiento)
+    {
+        var baseTienda1 = DatosSemilla.NodosComercialesDeTienda(1);
+        var nodos = DatosSemilla.NodosComerciales.Where(n => n.TiendaId == tiendaId).OrderBy(n => n.Id).ToArray();
+
+        Assert.Equal(18, nodos.Length);
+        Assert.Equal(Enumerable.Range(desplazamiento + 1, 18), nodos.Select(n => n.Id));
+        Assert.Single(nodos, n => n.NodoPadreId is null);
+        for (var i = 0; i < 18; i++)
+        {
+            Assert.Equal(baseTienda1[i].ConceptoComercialId, nodos[i].ConceptoComercialId);
+            Assert.Equal(baseTienda1[i].PorcentajeParticipacion, nodos[i].PorcentajeParticipacion);
+            Assert.Equal(baseTienda1[i].NodoPadreId is int padre ? desplazamiento + padre : null, nodos[i].NodoPadreId);
+        }
+    }
+
+    [Fact]
+    public void LaSemillaNoMezclaTiendasEntrePadreEHijo()
+    {
+        var porId = DatosSemilla.NodosComerciales.ToDictionary(n => n.Id);
+
+        Assert.All(porId.Values.Where(n => n.NodoPadreId is not null),
+            n => Assert.Equal(n.TiendaId, porId[n.NodoPadreId!.Value].TiendaId));
     }
 }

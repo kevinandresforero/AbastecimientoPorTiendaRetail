@@ -1,0 +1,41 @@
+@inherits PaginaBase
+
+<Dialogo Titulo="Nuevo concepto comercial">
+    <EditForm Model="formulario" OnValidSubmit="GuardarAsync">
+        <DataAnnotationsValidator />
+        <ResumenErroresApi Error="error" CampoConflicto="@nameof(FormularioConcepto.Nombre)" />
+        <ValidationSummary class="alert alert-danger resumen-validacion" />
+
+        <div class="mb-3">
+            <label class="form-label" for="concepto-nivel">Nivel</label>
+            <InputSelect id="concepto-nivel" class="form-select" @bind-Value="formulario.NivelJerarquiaId">
+                <option value="">Seleccione…</option>
+                @foreach (var nivel in Niveles)
+                {
+                    <option value="@nivel.Id">@nivel.Profundidad. @nivel.Nombre@(nivel.EsHoja ? " (hoja)" : "")</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => formulario.NivelJerarquiaId" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="concepto-nombre">Nombre</label>
+            <InputText id="concepto-nombre" class="form-control" placeholder="Ej. LABIALES" @bind-Value="formulario.Nombre" />
+            <ValidationMessage For="() => formulario.Nombre" />
+        </div>
+
+        @if (formulario.NivelEsHoja)
+        {
+            <div class="mb-3">
+                <label class="form-label" for="concepto-unidades">Unidades por espacio</label>
+                <InputNumber id="concepto-unidades" class="form-control" min="1" placeholder="Ej. 660" @bind-Value="formulario.UnidadesPorEspacio" />
+                <ValidationMessage For="() => formulario.UnidadesPorEspacio" />
+            </div>
+        }
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-primary" @onclick="CancelarAsync">Cancelar</button>
+            <button type="submit" class="btn btn-primary" disabled="@enviando">@(enviando ? "Guardando…" : "Crear concepto")</button>
+        </div>
+    </EditForm>
+</Dialogo>

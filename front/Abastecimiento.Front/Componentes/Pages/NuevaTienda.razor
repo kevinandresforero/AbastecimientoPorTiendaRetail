@@ -1,0 +1,127 @@
+@page "/tiendas/nueva"
+@inherits PaginaBase
+
+<PageTitle>Nueva tienda · Abastecimiento</PageTitle>
+
+<EncabezadoPagina Titulo="Nueva tienda" Migas="Migas"
+                  Descripcion="Registre la tienda con su mobiliario: hasta 3 tipos de mueble más los espacios perimetrales." />
+
+<div class="alert alert-info" role="note">
+    La tienda se crea <strong>sin árbol comercial</strong>. Después podrá armarlo desde cero o copiarlo de otra tienda
+    en <a href="arbol" class="alert-link">Árbol comercial</a>.
+</div>
+
+<MensajeError Error="errorCarga" AlReintentar="CargarCatalogosAsync" />
+
+@if (cargando)
+{
+    <Cargando Texto="Cargando catálogos…" />
+}
+else if (errorCarga is null)
+{
+    <EditForm Model="formulario" OnValidSubmit="GuardarAsync" class="formulario-tienda">
+        <DataAnnotationsValidator />
+        <ResumenErroresApi Error="errorEnvio" CampoConflicto="@nameof(FormularioTienda.CodigoHanna)" />
+        <ValidationSummary class="alert alert-danger resumen-validacion" />
+
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <section class="panel">
+                    <div class="panel-cuerpo">
+                        <div class="seccion-formulario">
+                            <h2 class="seccion-formulario-titulo">Datos de la tienda</h2>
+                            <p class="form-text mt-0 mb-3">Código, nombre y catálogos a los que pertenece.</p>
+                            <div class="row g-3">
+                                <div class="col-sm-4" id="campo-codigo">
+                                    <label class="form-label" for="codigo-hanna">Código HANNA</label>
+                                    <InputNumber id="codigo-hanna" class="form-control" @bind-Value="formulario.CodigoHanna" placeholder="Ej. 5503" />
+                                    <ValidationMessage For="() => formulario.CodigoHanna" />
+                                </div>
+                                <div class="col-sm-8" id="campo-nombre">
+                                    <label class="form-label" for="nombre">Nombre de la tienda</label>
+                                    <InputText id="nombre" class="form-control" @bind-Value="formulario.Nombre" placeholder="Ej. LILI EN YOI YAHAD TOBERIN" />
+                                    <ValidationMessage For="() => formulario.Nombre" />
+                                </div>
+                                <div class="col-sm-4" id="campo-marca">
+                                    <SelectorCatalogo Id="marca" Etiqueta="Marca de tienda" Opciones="marcas" @bind-Value="formulario.MarcaTiendaId" />
+                                </div>
+                                <div class="col-sm-4" id="campo-regional">
+                                    <SelectorCatalogo Id="regional" Etiqueta="Regional" Opciones="regionales" @bind-Value="formulario.RegionalId" />
+                                </div>
+                                <div class="col-sm-4" id="campo-tipo">
+                                    <SelectorCatalogo Id="tipo-tienda" Etiqueta="Tipo de tienda" Opciones="tiposTienda" @bind-Value="formulario.TipoTiendaId" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <fieldset class="seccion-formulario" id="campo-espacios">
+                            <legend class="seccion-formulario-titulo">Espacios</legend>
+                            <p class="form-text mt-0 mb-3">Hasta @MaximoMobiliarioAttribute.Maximo tipos de mobiliario más los
+                                perimetrales. Cada tipo de espacio solo puede aparecer una vez.</p>
+
+                            @for (var i = 0; i < formulario.Espacios.Count; i++)
+                            {
+                                var indice = i;
+                                var fila = formulario.Espacios[indice];
+                                <div class="row g-2 align-items-start mb-2 fila-espacio" @key="fila">
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="@($"espacio-tipo-{indice}")">Tipo de espacio @(indice + 1)</label>
+                                        <InputSelect id="@($"espacio-tipo-{indice}")" class="form-select" @bind-Value="fila.TipoEspacioId">
+                                            <option value="">Seleccione…</option>
+                                            @foreach (var tipo in tiposEspacio)
+                                            {
+                                                <option value="@tipo.Id">@tipo.Nombre (@Textos.Categoria(tipo.Categoria))</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="() => fila.TipoEspacioId" />
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <label class="form-label" for="@($"espacio-cantidad-{indice}")">Cantidad</label>
+                                        <InputNumber id="@($"espacio-cantidad-{indice}")" class="form-control" min="0" @bind-Value="fila.CantidadEspacios" />
+                                        <ValidationMessage For="() => fila.CantidadEspacios" />
+                                    </div>
+                                    <div class="col-sm-3 boton-alineado">
+                                        <button type="button" class="btn btn-outline-secondary w-100" disabled="@(formulario.Espacios.Count == 1)"
+                                                @onclick="() => QuitarFila(fila)">Quitar<span class="visually-hidden"> espacio @(indice + 1)</span></button>
+                                    </div>
+                                </div>
+                            }
+
+                            <button type="button" class="btn btn-outline-primary mt-2" id="agregar-espacio" @onclick="AgregarFila">
+                                <Icono Nombre="mas" /> Agregar espacio
+                            </button>
+                            <ValidationMessage For="() => formulario.Espacios" />
+                        </fieldset>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-xl-4">
+                <aside class="resumen-lateral" aria-label="Resumen de la tienda">
+                    <div class="cifras mb-3" aria-live="polite">
+                        <article class="tarjeta-cifra destacada">
+                            <span class="tarjeta-cifra-icono"><Icono Nombre="espacios" /></span>
+                            <div>
+                                <p class="tarjeta-cifra-etiqueta">Espacios totales</p>
+                                <p class="tarjeta-cifra-valor" id="espacios-totales">@Formato.Entero(formulario.EspaciosTotales)</p>
+                                <p class="tarjeta-cifra-detalle">Suma de mobiliario y perimetrales</p>
+                            </div>
+                        </article>
+                        <article class="tarjeta-cifra">
+                            <span class="tarjeta-cifra-icono"><Icono Nombre="tiendas" /></span>
+                            <div>
+                                <p class="tarjeta-cifra-etiqueta">Tipos de mobiliario</p>
+                                <p class="tarjeta-cifra-valor" id="tipos-mobiliario">@formulario.TiposMobiliario de @MaximoMobiliarioAttribute.Maximo</p>
+                                <p class="tarjeta-cifra-detalle">Los perimetrales no cuentan</p>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" disabled="@enviando">@(enviando ? "Guardando…" : "Crear tienda")</button>
+                        <a class="btn btn-outline-primary" href="tiendas">Cancelar</a>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </EditForm>
+}

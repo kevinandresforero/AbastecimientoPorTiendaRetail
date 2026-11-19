@@ -1,0 +1,152 @@
+@page "/tiendas/{CodigoHanna:int}"
+@inherits PaginaBase
+
+<PageTitle>Tienda @CodigoHanna · Abastecimiento</PageTitle>
+
+@if (cargandoTienda)
+{
+    <EncabezadoPagina Titulo="@($"Tienda {CodigoHanna}")" Migas="Migas" />
+    <Cargando Texto="Cargando tienda…" />
+}
+else if (noEncontrada)
+{
+    <EncabezadoPagina Titulo="Tienda no encontrada" Migas="Migas" />
+    <div class="alert alert-warning" role="alert">
+        Advertencia: No existe una tienda con el código HANNA @CodigoHanna.
+        <a href="tiendas" class="alert-link">Ir al listado de tiendas</a>
+    </div>
+}
+else if (errorTienda is not null)
+{
+    <EncabezadoPagina Titulo="@($"Tienda {CodigoHanna}")" Migas="Migas" />
+    <MensajeError Error="errorTienda" AlReintentar="CargarAsync" />
+}
+else if (tienda is not null)
+{
+    @if (Creada)
+    {
+        <div class="alert alert-success" role="status">Tienda creada: @tienda.CodigoHanna — @tienda.Nombre.</div>
+    }
+
+    <EncabezadoPagina Titulo="@tienda.Nombre" Antetitulo="@($"HANNA {tienda.CodigoHanna}")" Migas="Migas">
+        <Acciones>
+            <a class="btn btn-outline-primary" href="@($"arbol?tienda={tienda.CodigoHanna}")">
+                <Icono Nombre="arbol" /> Ver árbol comercial
+            </a>
+        </Acciones>
+        <ChildContent>
+            <span class="chip">Marca: @tienda.MarcaTienda.Nombre</span>
+            <span class="chip chip-neutro">Regional: @tienda.Regional.Nombre</span>
+            <span class="chip chip-neutro">Tipo: @tienda.TipoTienda.Nombre</span>
+        </ChildContent>
+    </EncabezadoPagina>
+
+    <section class="cifras" aria-label="Cifras de la tienda">
+        <TarjetaCifra Etiqueta="Espacios totales" Valor="@Formato.Entero(tienda.EspaciosTotales)" Detalle="Mobiliario y perimetrales" NombreIcono="espacios" />
+        @if (carga is not null)
+        {
+            <TarjetaCifra Etiqueta="Espacios asignados" Valor="@Formato.Decimal4(carga.TotalEspaciosAsignados)"
+                          Tooltip="@Formato.Completo(carga.TotalEspaciosAsignados)" Detalle="Repartidos por el árbol" NombreIcono="capas" />
+            <TarjetaCifra Etiqueta="Tipos de producto" Valor="@Formato.Entero(carga.Lineas.Count)" Detalle="Líneas de carga" NombreIcono="producto" />
+            <TarjetaCifra Etiqueta="Carga total" Valor="@Formato.Entero(carga.TotalCarga)" Detalle="unidades a enviar" NombreIcono="carga" Destacada="true" />
+        }
+    </section>
+
+    <section class="panel" id="panel-carga" aria-labelledby="titulo-carga">
+        <div class="panel-cabecera">
+            <h2 class="panel-titulo" id="titulo-carga"><Icono Nombre="carga" /> Carga por tipo de producto</h2>
+        </div>
+        @if (cargandoCarga)
+        {
+            <div class="panel-cuerpo"><Cargando Texto="Calculando carga…" /></div>
+        }
+        else if (errorCarga is not null)
+        {
+            <div class="panel-cuerpo"><MensajeError Error="errorCarga" AlReintentar="CargarCargaAsync" /></div>
+        }
+        else if (carga is not null)
+        {
+            @if (carga.Advertencias.Count > 0)
+            {
+                <div class="panel-cuerpo pb-0">
+                    <div class="alert alert-warning" role="alert">
+                        <p class="fw-bold mb-1">Advertencia</p>
+                        <ul class="mb-0">
+                            @foreach (var advertencia in carga.Advertencias)
+                            {
+                                <li>@advertencia</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            @if (carga.Lineas.Count == 0)
+            {
+                <p class="estado-vacio" role="status">El cálculo no produjo líneas de carga para esta tienda.</p>
+            }
+            else
+            {
+                <TablaCarga Carga="carga" Niveles="niveles" />
+            }
+        }
+    </section>
+
+    <div class="row g-4">
+        <div class="col-xl-5">
+            <section class="panel" aria-labelledby="titulo-espacios">
+                <div class="panel-cabecera">
+                    <h2 class="panel-titulo" id="titulo-espacios"><Icono Nombre="espacios" /> Espacios de la tienda</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle tabla-espacios">
+                        <thead>
+                            <tr>
+                                <th scope="col">Tipo de espacio</th>
+                                <th scope="col">Categoría</th>
+                                <th scope="col" class="text-end">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var espacio in tienda.Espacios)
+                            {
+                                <tr>
+                                    <td>@espacio.TipoEspacio</td>
+                                    <td><span class="chip @(espacio.Categoria == CategoriaEspacio.Perimetral ? "chip-acento" : null)">@Textos.Categoria(espacio.Categoria)</span></td>
+                                    <td class="text-end">@Formato.Entero(espacio.CantidadEspacios)</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="fila-total">
+                                <th scope="row" colspan="2">Total</th>
+                                <td class="text-end">@Formato.Entero(tienda.EspaciosTotales)</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        </div>
+        <div class="col-xl-7">
+            @if (carga is not null)
+            {
+                <details class="panel desglose">
+                    <summary>Desglose por nivel</summary>
+                    <ArbolNodos TNodo="NodoCalculadoRespuesta" Nodos="carga.Nodos" Titulo="Desglose por nivel"
+                                ObtenerId="n => n.NodoId" ObtenerPadreId="n => n.NodoPadreId" ObtenerNombre="n => n.Nombre">
+                        <Encabezados>
+                            <th scope="col">Nivel</th>
+                            <th scope="col" class="text-end">% part.</th>
+                            <th scope="col" class="text-end">Espacios</th>
+                        </Encabezados>
+                        <Columnas Context="nodo">
+                            <td class="texto-secundario">@nodo.Nivel</td>
+                            <td class="text-end" title="@Formato.PorcentajeCompleto(nodo.PorcentajeParticipacion)">@Formato.Porcentaje(nodo.PorcentajeParticipacion)</td>
+                            <td class="text-end" title="@Formato.Completo(nodo.EspaciosCalculados)">@Formato.Decimal4(nodo.EspaciosCalculados)</td>
+                        </Columnas>
+                    </ArbolNodos>
+                </details>
+            }
+        </div>
+    </div>
+}

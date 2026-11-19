@@ -41,6 +41,24 @@ public interface IArbolComercialRepositorio
 
     /// <summary>Nodo con seguimiento (para modificarlo), incluyendo concepto y nivel.</summary>
     Task<NodoComercial?> ObtenerNodoParaEditarAsync(int id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Arbol de una tienda (sus nodos con concepto y nivel) en una sola SELECT, sin seguimiento y ordenado por Id.
+    /// Tienda sin nodos → lista vacia.
+    /// </summary>
+    Task<IReadOnlyList<NodoComercial>> ObtenerArbolPorTiendaAsync(int tiendaId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Indica si el concepto ya cuelga del padre dentro de la tienda; con <paramref name="nodoPadreId"/> null valida
+    /// una unidad de negocio repetida en la tienda.
+    /// </summary>
+    Task<bool> ExisteNodoAsync(int tiendaId, int? nodoPadreId, int conceptoComercialId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Alta en lote (ej. copia del arbol de una tienda a otra). Los nodos nuevos se enlazan por la navegacion
+    /// <c>NodoPadre</c> y se guardan con un solo <c>GuardarCambiosAsync</c>.
+    /// </summary>
+    Task AgregarNodosAsync(IEnumerable<NodoComercial> nodos, CancellationToken ct = default);
 }
 
 /// <summary>Acceso generico a catalogos simples (Id + Nombre).</summary>

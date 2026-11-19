@@ -3,6 +3,7 @@ using Abastecimiento.Aplicacion.Dtos.ArbolComercial;
 using Abastecimiento.Aplicacion.Dtos.Reportes;
 using Abastecimiento.Aplicacion.Helpers;
 using Abastecimiento.Aplicacion.Motor;
+using Abastecimiento.Dominio.Entidades.ArbolComercial;
 using Abastecimiento.Dominio.Entidades.Tiendas;
 using Abastecimiento.Dominio.Excepciones;
 using Abastecimiento.Dominio.Interfaces;
@@ -11,8 +12,9 @@ using Abastecimiento.Dominio.Reglas;
 namespace Abastecimiento.Aplicacion.Servicios;
 
 /// <summary>
-/// Lee una sola vez las tiendas y el arbol, ejecuta el motor por tienda en memoria y agrupa.
-/// Las cargas se suman a partir de las lineas ya redondeadas (igual que la tabla del enunciado).
+/// Lee una sola vez las tiendas, los niveles y el arbol completo; ejecuta el motor por tienda con su propio
+/// arbol (agrupado por <c>TiendaId</c>) y agrupa el resultado. Las cargas se suman a partir de las lineas ya
+/// redondeadas (igual que la tabla del enunciado).
 /// </summary>
 public sealed class ServicioReportes(
     ITiendaRepositorio tiendas,
@@ -31,15 +33,22 @@ public sealed class ServicioReportes(
             throw new ValidacionDominioExcepcion("agruparPor debe ser tienda, marcaTienda, regional o nivel.");
         }
 
+        var niveles = await arbolRepositorio.ObtenerNivelesAsync(ct);
         NivelRespuesta? nivel = null;
         if (agruparPor == AgruparPor.Nivel)
         {
-            nivel = await ObtenerNivelAsync(nivelId, ct);
+            nivel = ObtenerNivel(nivelId, niveles);
         }
 
         var todas = await tiendas.ObtenerTodasAsync(ct: ct);
         var nodos = await arbolRepositorio.ObtenerArbolCompletoAsync(ct);
-        var calculos = todas.Select(t => new CalculoTienda(t, motor.Calcular(t.EspaciosTotales, nodos))).ToList();
+        var profundidadHoja = ValidadorArbolComercial.ObtenerProfundidadHoja(niveles);
+        var nodosPorTienda = nodos.ToLookup(n => n.TiendaId);
+        var calculos = todas
+            .Select(t => new CalculoTienda(
+                t,
+                motor.Calcular(t.EspaciosTotales, nodosPorTienda[t.Id].ToList(), profundidadHoja)))
+            .ToList();
 
         return agruparPor switch
         {
@@ -50,14 +59,13 @@ public sealed class ServicioReportes(
         };
     }
 
-    private async Task<NivelRespuesta> ObtenerNivelAsync(int? nivelId, CancellationToken ct)
+    private static NivelRespuesta ObtenerNivel(int? nivelId, IReadOnlyList<NivelJerarquia> niveles)
     {
         if (nivelId is null)
         {
             throw new ValidacionDominioExcepcion("Para agrupar por nivel se requiere el parametro nivelId.");
         }
 
-        var niveles = await arbolRepositorio.ObtenerNivelesAsync(ct);
         var nivel = niveles.FirstOrDefault(n => n.Id == nivelId)
             ?? throw new ValidacionDominioExcepcion($"El nivel de jerarquia {nivelId} no existe.");
 

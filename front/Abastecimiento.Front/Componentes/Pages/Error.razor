@@ -1,0 +1,13 @@
+﻿@page "/Error"
+
+<PageTitle>Error</PageTitle>
+
+<h1>Error</h1>
+<div class="alert alert-danger" role="alert">
+    <p class="mb-1 fw-bold">Error: ocurrió un problema al procesar la solicitud.</p>
+    @if (MostrarIdSolicitud)
+    {
+        <p class="mb-0">Identificador de la solicitud: <code>@IdSolicitud</code></p>
+    }
+</div>
+<p><a href="">Volver al inicio</a></p>

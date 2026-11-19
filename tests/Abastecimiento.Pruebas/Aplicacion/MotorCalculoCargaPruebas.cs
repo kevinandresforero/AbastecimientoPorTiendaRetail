@@ -29,7 +29,7 @@ public class MotorCalculoCargaPruebas
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 7);
 
         var linea = Assert.Single(resultado.Lineas, l =>
             l.Nodo.ConceptoComercial.Nombre == tipoProducto && l.Camino.Any(n => n.ConceptoComercial.Nombre == marcaProducto));
@@ -44,7 +44,7 @@ public class MotorCalculoCargaPruebas
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 7);
 
         Assert.Equal(6, resultado.Lineas.Count);
         Assert.Equal(6.6m, resultado.TotalEspaciosAsignados);
@@ -58,10 +58,10 @@ public class MotorCalculoCargaPruebas
     public void LasOtrasTiendasCalculanConSusEspacios(int codigoHanna, int espaciosEsperados, int espaciosAsignados, int cargaEsperada)
     {
         var tiendas = new TiendasDePrueba();
-        var (nodos, _) = ArbolDePrueba.DesdeSemilla();
+        var (nodos, _) = ArbolDePrueba.DesdeSemilla(codigoHanna == 1001 ? 2 : 3);
         var espaciosTotales = tiendas.EspaciosTotales(codigoHanna);
 
-        var resultado = CrearMotor().Calcular(espaciosTotales, nodos);
+        var resultado = CrearMotor().Calcular(espaciosTotales, nodos, 7);
 
         Assert.Equal(espaciosEsperados, espaciosTotales);
         Assert.Equal(espaciosAsignados, resultado.TotalEspaciosAsignados);
@@ -74,8 +74,8 @@ public class MotorCalculoCargaPruebas
         // Arbol de 2 niveles: A = 5 x 0.5 x 1 = 2.5 (empate); B = 5 x 0.46 x 1 = 2.3 (sin empate).
         var nodos = ArbolSimple((0.5m, 1), (0.46m, 1));
 
-        var lejosDeCero = CrearMotor(MidpointRounding.AwayFromZero).Calcular(5, nodos);
-        var alPar = CrearMotor(MidpointRounding.ToEven).Calcular(5, nodos);
+        var lejosDeCero = CrearMotor(MidpointRounding.AwayFromZero).Calcular(5, nodos, 2);
+        var alPar = CrearMotor(MidpointRounding.ToEven).Calcular(5, nodos, 2);
 
         Assert.Equal(3, lejosDeCero.Lineas[0].CargaTotal);
         Assert.Equal(2, alPar.Lineas[0].CargaTotal);
@@ -88,7 +88,7 @@ public class MotorCalculoCargaPruebas
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
 
-        Assert.Equal(2966, CrearMotor(MidpointRounding.ToEven).Calcular(22, nodos).TotalCarga);
+        Assert.Equal(2966, CrearMotor(MidpointRounding.ToEven).Calcular(22, nodos, 7).TotalCarga);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class MotorCalculoCargaPruebas
             ConceptoComercial = new ConceptoComercial { Id = 100, Nombre = "HOGAR", NivelJerarquiaId = nivelCategoria.Id, NivelJerarquia = nivelCategoria }
         });
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 7);
 
         var advertencia = Assert.Single(resultado.Advertencias);
         Assert.Contains("BELLEZA Y BIENESTAR > HOGAR", advertencia);
@@ -142,7 +142,7 @@ public class MotorCalculoCargaPruebas
             });
         }
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 8);
 
         Assert.Equal(6, resultado.Lineas.Count);
         Assert.All(resultado.Lineas, l => Assert.Equal(8, l.Camino.Count));
@@ -158,7 +158,7 @@ public class MotorCalculoCargaPruebas
         var nodos = ArbolSimple((0.000001m, 660));
         nodos[0].PorcentajeParticipacion = 0.000001m;
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 2);
 
         var linea = Assert.Single(resultado.Lineas);
         Assert.Equal(0.000000000022m, linea.EspaciosCalculados);
@@ -171,7 +171,7 @@ public class MotorCalculoCargaPruebas
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 7);
 
         // 22 x 0.30 x 0.94 x 0.45 x 0.60 = 1.67508 (el enunciado lo presenta como 1.6751).
         var pestanina = resultado.Nodos.Single(n => n.Nodo.Id == 12);
@@ -187,7 +187,7 @@ public class MotorCalculoCargaPruebas
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
 
-        var resultado = CrearMotor().Calcular(22, nodos);
+        var resultado = CrearMotor().Calcular(22, nodos, 7);
 
         var nodo = resultado.Nodos.Single(n => n.Nodo.Id == nodoId);
         Assert.Equal(nombre, nodo.Nodo.ConceptoComercial.Nombre);

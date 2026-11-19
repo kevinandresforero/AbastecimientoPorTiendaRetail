@@ -242,15 +242,26 @@ namespace Abastecimiento.Infraestructura.Persistencia.Migraciones
                         .HasPrecision(18, 6)
                         .HasColumnType("decimal(18,6)");
 
+                    b.Property<int>("TiendaId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ConceptoComercialId")
                         .HasDatabaseName("IX_NodosComerciales_ConceptoComercialId");
 
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("IX_NodosComerciales_TiendaId");
+
                     b.HasIndex("NodoPadreId", "ConceptoComercialId")
                         .IsUnique()
                         .HasDatabaseName("UQ_NodosComerciales_NodoPadreId_ConceptoComercialId")
                         .HasFilter("[NodoPadreId] IS NOT NULL");
+
+                    b.HasIndex("TiendaId", "ConceptoComercialId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz")
+                        .HasFilter("[NodoPadreId] IS NULL");
 
                     b.ToTable("NodosComerciales", "nodoscomerciales", t =>
                         {
@@ -262,126 +273,430 @@ namespace Abastecimiento.Infraestructura.Persistencia.Migraciones
                         {
                             Id = 1,
                             ConceptoComercialId = 1,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 2,
                             ConceptoComercialId = 2,
                             NodoPadreId = 1,
-                            PorcentajeParticipacion = 0.30m
+                            PorcentajeParticipacion = 0.30m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 3,
                             ConceptoComercialId = 3,
                             NodoPadreId = 2,
-                            PorcentajeParticipacion = 0.94m
+                            PorcentajeParticipacion = 0.94m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 4,
                             ConceptoComercialId = 4,
                             NodoPadreId = 2,
-                            PorcentajeParticipacion = 0.06m
+                            PorcentajeParticipacion = 0.06m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 5,
                             ConceptoComercialId = 5,
                             NodoPadreId = 3,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 6,
                             ConceptoComercialId = 6,
                             NodoPadreId = 5,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 7,
                             ConceptoComercialId = 7,
                             NodoPadreId = 6,
-                            PorcentajeParticipacion = 0.40m
+                            PorcentajeParticipacion = 0.40m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 8,
                             ConceptoComercialId = 8,
                             NodoPadreId = 6,
-                            PorcentajeParticipacion = 0.45m
+                            PorcentajeParticipacion = 0.45m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 9,
                             ConceptoComercialId = 9,
                             NodoPadreId = 6,
-                            PorcentajeParticipacion = 0.15m
+                            PorcentajeParticipacion = 0.15m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 10,
                             ConceptoComercialId = 10,
                             NodoPadreId = 7,
-                            PorcentajeParticipacion = 0.50m
+                            PorcentajeParticipacion = 0.50m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 11,
                             ConceptoComercialId = 11,
                             NodoPadreId = 7,
-                            PorcentajeParticipacion = 0.50m
+                            PorcentajeParticipacion = 0.50m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 12,
                             ConceptoComercialId = 12,
                             NodoPadreId = 8,
-                            PorcentajeParticipacion = 0.60m
+                            PorcentajeParticipacion = 0.60m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 13,
                             ConceptoComercialId = 13,
                             NodoPadreId = 8,
-                            PorcentajeParticipacion = 0.40m
+                            PorcentajeParticipacion = 0.40m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 14,
                             ConceptoComercialId = 14,
                             NodoPadreId = 9,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 15,
                             ConceptoComercialId = 5,
                             NodoPadreId = 4,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 16,
                             ConceptoComercialId = 6,
                             NodoPadreId = 15,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 17,
                             ConceptoComercialId = 7,
                             NodoPadreId = 16,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
                         },
                         new
                         {
                             Id = 18,
                             ConceptoComercialId = 15,
                             NodoPadreId = 17,
-                            PorcentajeParticipacion = 1.00m
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 1
+                        },
+                        new
+                        {
+                            Id = 2001,
+                            ConceptoComercialId = 1,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2002,
+                            ConceptoComercialId = 2,
+                            NodoPadreId = 2001,
+                            PorcentajeParticipacion = 0.30m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2003,
+                            ConceptoComercialId = 3,
+                            NodoPadreId = 2002,
+                            PorcentajeParticipacion = 0.94m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2004,
+                            ConceptoComercialId = 4,
+                            NodoPadreId = 2002,
+                            PorcentajeParticipacion = 0.06m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2005,
+                            ConceptoComercialId = 5,
+                            NodoPadreId = 2003,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2006,
+                            ConceptoComercialId = 6,
+                            NodoPadreId = 2005,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2007,
+                            ConceptoComercialId = 7,
+                            NodoPadreId = 2006,
+                            PorcentajeParticipacion = 0.40m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2008,
+                            ConceptoComercialId = 8,
+                            NodoPadreId = 2006,
+                            PorcentajeParticipacion = 0.45m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2009,
+                            ConceptoComercialId = 9,
+                            NodoPadreId = 2006,
+                            PorcentajeParticipacion = 0.15m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2010,
+                            ConceptoComercialId = 10,
+                            NodoPadreId = 2007,
+                            PorcentajeParticipacion = 0.50m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2011,
+                            ConceptoComercialId = 11,
+                            NodoPadreId = 2007,
+                            PorcentajeParticipacion = 0.50m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2012,
+                            ConceptoComercialId = 12,
+                            NodoPadreId = 2008,
+                            PorcentajeParticipacion = 0.60m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2013,
+                            ConceptoComercialId = 13,
+                            NodoPadreId = 2008,
+                            PorcentajeParticipacion = 0.40m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2014,
+                            ConceptoComercialId = 14,
+                            NodoPadreId = 2009,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2015,
+                            ConceptoComercialId = 5,
+                            NodoPadreId = 2004,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2016,
+                            ConceptoComercialId = 6,
+                            NodoPadreId = 2015,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2017,
+                            ConceptoComercialId = 7,
+                            NodoPadreId = 2016,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 2018,
+                            ConceptoComercialId = 15,
+                            NodoPadreId = 2017,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 2
+                        },
+                        new
+                        {
+                            Id = 3001,
+                            ConceptoComercialId = 1,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3002,
+                            ConceptoComercialId = 2,
+                            NodoPadreId = 3001,
+                            PorcentajeParticipacion = 0.30m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3003,
+                            ConceptoComercialId = 3,
+                            NodoPadreId = 3002,
+                            PorcentajeParticipacion = 0.94m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3004,
+                            ConceptoComercialId = 4,
+                            NodoPadreId = 3002,
+                            PorcentajeParticipacion = 0.06m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3005,
+                            ConceptoComercialId = 5,
+                            NodoPadreId = 3003,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3006,
+                            ConceptoComercialId = 6,
+                            NodoPadreId = 3005,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3007,
+                            ConceptoComercialId = 7,
+                            NodoPadreId = 3006,
+                            PorcentajeParticipacion = 0.40m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3008,
+                            ConceptoComercialId = 8,
+                            NodoPadreId = 3006,
+                            PorcentajeParticipacion = 0.45m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3009,
+                            ConceptoComercialId = 9,
+                            NodoPadreId = 3006,
+                            PorcentajeParticipacion = 0.15m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3010,
+                            ConceptoComercialId = 10,
+                            NodoPadreId = 3007,
+                            PorcentajeParticipacion = 0.50m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3011,
+                            ConceptoComercialId = 11,
+                            NodoPadreId = 3007,
+                            PorcentajeParticipacion = 0.50m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3012,
+                            ConceptoComercialId = 12,
+                            NodoPadreId = 3008,
+                            PorcentajeParticipacion = 0.60m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3013,
+                            ConceptoComercialId = 13,
+                            NodoPadreId = 3008,
+                            PorcentajeParticipacion = 0.40m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3014,
+                            ConceptoComercialId = 14,
+                            NodoPadreId = 3009,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3015,
+                            ConceptoComercialId = 5,
+                            NodoPadreId = 3004,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3016,
+                            ConceptoComercialId = 6,
+                            NodoPadreId = 3015,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3017,
+                            ConceptoComercialId = 7,
+                            NodoPadreId = 3016,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
+                        },
+                        new
+                        {
+                            Id = 3018,
+                            ConceptoComercialId = 15,
+                            NodoPadreId = 3017,
+                            PorcentajeParticipacion = 1.00m,
+                            TiendaId = 3
                         });
                 });
 
@@ -968,9 +1283,18 @@ namespace Abastecimiento.Infraestructura.Persistencia.Migraciones
                         .HasForeignKey("NodoPadreId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Abastecimiento.Dominio.Entidades.Tiendas.Tienda", "Tienda")
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_NodosComerciales_Tiendas_TiendaId");
+
                     b.Navigation("ConceptoComercial");
 
                     b.Navigation("NodoPadre");
+
+                    b.Navigation("Tienda");
                 });
 
             modelBuilder.Entity("Abastecimiento.Dominio.Entidades.Seguridad.SesionToken", b =>

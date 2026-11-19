@@ -53,6 +53,8 @@ Documentos de referencia, **en este orden de prioridad**:
 * **Nulabilidad** habilitada y compilacion **sin warnings** (`TreatWarningsAsErrors` llega por el `Directory.Build.props`
   de la raiz; no desactivarlo).
 * **Accesibilidad basica:** `label` en cada campo, botones con texto, estados de carga y de error visibles.
+* **Colores y contraste:** paleta basada en #014B43 y #F9ECE5 (orientativa); **todo texto ≥ 4.5:1 y toda UI/foco ≥ 3:1**
+  contra su fondo, sin excepciones (§7). Colores solo via tokens de `tema.css`.
 
 ---
 
@@ -81,7 +83,8 @@ front/
     Componentes/Pages/                  (§5; cada pagina .razor + .razor.cs)
     Componentes/Compartidos/            (§5.8)
     Utilidades/Formato.cs               (formato de numeros y porcentajes)
-  tests/Abastecimiento.Front.Pruebas/   (xUnit + bUnit, §8)
+    wwwroot/css/tema.css                (tokens de color y variables de Bootstrap, §7)
+  tests/Abastecimiento.Front.Pruebas/   (xUnit + bUnit, §9)
 ```
 
 ---
@@ -243,7 +246,108 @@ correspondiente (mapeo de nombres PascalCase de la API al modelo del formulario)
 
 ---
 
-## 7. Configuracion y Docker
+## 7. Diseno Visual: Paleta de Colores y Contraste
+
+### 7.1. Paleta base (orientativa)
+La identidad visual **se basa** en dos colores: **#014B43** (verde azulado oscuro) y **#F9ECE5** (crema). La paleta de
+abajo es la referencia: se pueden ajustar tonos o agregar otros **derivados** de estos dos, siempre que cumplan §7.3.
+Lo unico **no negociable** es el contraste.
+
+| Token CSS | Hex | Uso |
+|---|---|---|
+| `--color-primario` | `#014B43` | Botones primarios, barra de navegacion, encabezados de tabla, enlaces |
+| `--color-primario-oscuro` | `#01362F` | Hover / activo del primario |
+| `--color-primario-suave` | `#DCEEEA` | Fila seleccionada, chips, fondos de enfasis |
+| `--color-fondo` | `#F9ECE5` | Fondo de la aplicacion |
+| `--color-fondo-alterno` | `#F1DED3` | Filas alternas y hover de filas |
+| `--color-superficie` | `#FFFFFF` | Tarjetas, formularios, modales, tablas |
+| `--color-texto` | `#1C2B29` | Texto principal |
+| `--color-texto-secundario` | `#4D5C59` | Ayudas y etiquetas secundarias |
+| `--color-acento` | `#9A4321` | Acento calido (terracota derivado del crema): boton secundario, resaltes |
+| `--color-borde-campo` | `#7A8A86` | Borde de inputs y selects |
+| `--color-foco` | `#B4531F` | Anillo de foco (navegacion con teclado) |
+| `--color-exito-texto` / `--color-exito-fondo` | `#14532D` / `#DCF2E3` | Alertas y badges de exito |
+| `--color-advertencia-texto` / `--color-advertencia-fondo` | `#6B4500` / `#FFF1CC` | Advertencias (ej. `advertencias[]` de la carga) |
+| `--color-error-texto` / `--color-error-fondo` | `#8A1C1C` / `#FBE3E1` | Errores de la API y de validacion |
+| `--color-info-texto` / `--color-info-fondo` | `#0B4F6C` / `#DDEFF7` | Mensajes informativos |
+| `--color-deshabilitado-texto` / `--color-deshabilitado-fondo` | `#5B6664` / `#E9E2DD` | Campos y botones deshabilitados |
+| `--color-placeholder` | `#5E6B68` | Texto de ejemplo en campos |
+
+### 7.2. Pares verificados (WCAG 2.1, luminancia relativa)
+| Texto / elemento | Fondo | Ratio | Minimo | Uso |
+|---|---|---|---|---|
+| `#F9ECE5` | `#014B43` | **8.69:1** | 4.5 | Texto crema sobre la barra de navegacion |
+| `#FFFFFF` | `#014B43` | 10.05:1 | 4.5 | Texto de botones primarios y encabezados de tabla |
+| `#FFFFFF` | `#01362F` | 13.38:1 | 4.5 | Boton primario en hover |
+| `#1C2B29` | `#F9ECE5` | 12.72:1 | 4.5 | Texto principal sobre el fondo |
+| `#1C2B29` | `#FFFFFF` | 14.72:1 | 4.5 | Texto principal sobre superficies |
+| `#1C2B29` | `#F1DED3` | 11.30:1 | 4.5 | Filas alternas / hover |
+| `#1C2B29` | `#DCEEEA` | 12.24:1 | 4.5 | Fila seleccionada |
+| `#4D5C59` | `#F9ECE5` | 6.07:1 | 4.5 | Texto secundario sobre el fondo |
+| `#4D5C59` | `#FFFFFF` | 7.02:1 | 4.5 | Texto secundario sobre superficies |
+| `#014B43` | `#F9ECE5` | 8.69:1 | 4.5 | Enlaces sobre el fondo |
+| `#014B43` | `#FFFFFF` | 10.05:1 | 4.5 | Enlaces sobre superficies |
+| `#014B43` | `#DCEEEA` | 8.36:1 | 4.5 | Texto primario sobre chips |
+| `#9A4321` | `#FFFFFF` | 6.56:1 | 4.5 | Acento como texto sobre superficies |
+| `#9A4321` | `#F9ECE5` | 5.68:1 | 4.5 | Acento como texto sobre el fondo |
+| `#FFFFFF` | `#9A4321` | 6.56:1 | 4.5 | Texto de boton secundario |
+| `#14532D` | `#DCF2E3` | 7.75:1 | 4.5 | Alerta de exito |
+| `#6B4500` | `#FFF1CC` | 7.55:1 | 4.5 | Alerta de advertencia |
+| `#8A1C1C` | `#FBE3E1` | 7.59:1 | 4.5 | Alerta de error |
+| `#8A1C1C` | `#FFFFFF` | 9.28:1 | 4.5 | Mensaje de validacion bajo el campo |
+| `#0B4F6C` | `#DDEFF7` | 7.56:1 | 4.5 | Alerta informativa |
+| `#5B6664` | `#E9E2DD` | 4.64:1 | 4.5 | Campo / boton deshabilitado |
+| `#5E6B68` | `#FFFFFF` | 5.56:1 | 4.5 | Placeholder |
+| `#7A8A86` | `#FFFFFF` | 3.62:1 | 3.0 | Borde de campo sobre superficie (UI) |
+| `#7A8A86` | `#F9ECE5` | 3.13:1 | 3.0 | Borde de campo sobre el fondo (UI) |
+| `#B4531F` | `#F9ECE5` | 4.33:1 | 3.0 | Anillo de foco sobre el fondo (UI) |
+| `#B4531F` | `#FFFFFF` | 5.00:1 | 3.0 | Anillo de foco sobre superficies (UI) |
+| `#014B43` | `#F1DED3` | 7.72:1 | 4.5 | Enlaces y botones de contorno en filas alternas (agregado por el front) |
+| `#4D5C59` | `#F1DED3` | 5.39:1 | 4.5 | Texto secundario en filas alternas (agregado) |
+| `#4D5C59` | `#DCEEEA` | 5.84:1 | 4.5 | Texto secundario en fila seleccionada o de total (agregado) |
+| `#8A1C1C` | `#F9ECE5` | 8.02:1 | 4.5 | Mensaje de validacion sobre el fondo (agregado) |
+| `#014B43` | `#FFF1CC` | 8.96:1 | 4.5 | Boton de contorno en la barra de error de Blazor (agregado) |
+| `#F9ECE5` | `#014B43` | 8.69:1 | 3.0 | Anillo de foco en la barra lateral (UI, agregado) |
+| `#B4531F` | `#F1DED3` | 3.84:1 | 3.0 | Anillo de foco en filas alternas (UI, agregado) |
+| `#B4531F` | `#DCEEEA` | 4.16:1 | 3.0 | Anillo de foco en fila seleccionada (UI, agregado) |
+| `#B4531F` | `#FBE3E1` | 4.09:1 | 3.0 | Anillo de foco dentro de la alerta de error (UI, agregado) |
+| `#B4531F` | `#FFF1CC` | 4.46:1 | 3.0 | Anillo de foco en la barra de error de Blazor (UI, agregado) |
+| `#9A4321` | `#F8E6DC` | 5.42:1 | 4.5 | Chips terracota: perimetral, nivel hoja (`--color-acento-suave`, agregado) |
+| `#F9ECE5` | `#01362F` | 11.57:1 | 4.5 | Menú lateral en hover e ícono de la cifra destacada (agregado) |
+
+`--color-separador` (#EAD9CF) es solo decorativo (líneas entre filas y bordes de tarjetas): no transmite información ni
+delimita un control, por eso no tiene mínimo de contraste (WCAG §1.4.11 no aplica). Sombras y radios: `--sombra-*` y
+`--radio-*`, también en `tema.css`.
+
+Formula (WCAG 2.1): `ratio = (L1 + 0.05) / (L2 + 0.05)`, con `L` = luminancia relativa
+`0.2126·R + 0.7152·G + 0.0722·B` y cada canal linealizado (`c/12.92` si `c ≤ 0.04045`, si no `((c+0.055)/1.055)^2.4`).
+
+### 7.3. Reglas de contraste (STRICT)
+* **Todo texto ≥ 4.5:1** contra su fondo real (WCAG 2.1 §1.4.3, nivel AA), **sin importar el tamano de letra**. Incluye
+  placeholder, campos y botones deshabilitados, enlaces (normal, hover, visitado), botones en todos sus estados, badges,
+  alertas, tooltips, encabezados de tabla, filas alternas / hover / seleccionadas y mensajes de validacion.
+* **Componentes de UI e indicadores de foco ≥ 3:1** contra lo que tienen al lado (WCAG §1.4.11): bordes de campos,
+  checkboxes, radios, separadores interactivos y el anillo de foco. El foco debe verse siempre con teclado: **prohibido**
+  `outline: none` sin un reemplazo que cumpla.
+* Con transparencias (`rgba`, `opacity`), el ratio se mide sobre el **color compuesto final**.
+* Prohibido texto sobre imagenes o degradados sin un fondo solido que cumpla.
+* La informacion **no depende solo del color**: estados con texto o icono ("Error", "Advertencia", "Tienda creada").
+* **Libertad de paleta con control:** un color nuevo solo se usa si su par texto/fondo se agrega a la tabla de §7.2 y a
+  la prueba de §9, y cumple el minimo.
+
+### 7.4. Implementacion
+* Los tokens se declaran **una sola vez** como CSS custom properties en `Abastecimiento.Front/wwwroot/css/tema.css`
+  (`:root { --color-primario: #014B43; ... }`), cargado despues de Bootstrap en `App.razor`.
+* `tema.css` sobreescribe las variables de Bootstrap 5 con los tokens: `--bs-body-bg`, `--bs-body-color`,
+  `--bs-secondary-color`, `--bs-primary` y `--bs-primary-rgb`, `--bs-link-color` y `--bs-link-hover-color`,
+  `--bs-border-color`, `--bs-focus-ring-color`, y las variables de `.btn-primary`, `.btn-outline-primary`, `.table`,
+  `.alert-success`, `.alert-warning`, `.alert-danger` y `.alert-info`.
+* **Prohibido** escribir colores en hex, `rgb()` o nombres (`red`) en `.razor`, en estilos inline o en el CSS aislado de
+  los componentes: siempre `var(--color-...)`.
+
+---
+
+## 8. Configuracion y Docker
 * `appsettings.json`: `"Api": { "UrlBase": "http://localhost:5080" }` (API con `dotnet run`).
 * `Properties/launchSettings.json`: perfil `http` en `http://localhost:5090`, `ASPNETCORE_ENVIRONMENT=Development`.
 * `front/Dockerfile`: multi-stage `mcr.microsoft.com/dotnet/sdk:8.0` → `mcr.microsoft.com/dotnet/aspnet:8.0`, usuario `app`,
@@ -272,7 +376,7 @@ correspondiente (mapeo de nombres PascalCase de la API al modelo del formulario)
 
 ---
 
-## 8. Pruebas (`front/tests/Abastecimiento.Front.Pruebas`)
+## 9. Pruebas (`front/tests/Abastecimiento.Front.Pruebas`)
 xUnit + bUnit (sin otras librerias). Sin API real: clientes con `HttpMessageHandler` falso y componentes con clientes falsos.
 
 | Tipo | Casos |
@@ -283,6 +387,8 @@ xUnit + bUnit (sin otras librerias). Sin API real: clientes con `HttpMessageHand
 | Formulario de concepto | Nivel hoja sin unidades → invalido; nivel no hoja oculta el campo y envia `null` |
 | Porcentaje | `30` → envia `0.30`; `0` y `101` → invalidos |
 | `MensajeError` / `ResumenErroresApi` | Muestran titulo, detalle y errores; `errors["Nombre"]` aparece junto al campo Nombre |
+| Contraste del tema (`ContrasteTemaPruebas`) | Lee `wwwroot/css/tema.css`, extrae los tokens `--color-*` y, con la formula de §7.2, verifica **cada par** de la tabla de §7.2 contra su minimo (4.5 texto, 3.0 UI). Falla si un token del par no existe o no cumple. Ejemplo obligatorio: `--color-fondo` (#F9ECE5) vs `--color-primario` (#014B43) = 8.69:1 |
+| Sin colores sueltos | Recorre los `.razor`, `.razor.css` y `.cs` de `Componentes/` y falla si encuentra un color en hex, `rgb(`/`rgba(` o `hsl(` (todos deben venir de `var(--color-...)`) |
 
 Comando: `dotnet test front/Abastecimiento.Front.sln`. Ademas, agregar al servicio `pruebas` del `docker-compose.yml`
 la ejecucion de `dotnet test front/Abastecimiento.Front.sln` despues de la solucion del backend (el comando unico
@@ -290,14 +396,14 @@ la ejecucion de `dotnet test front/Abastecimiento.Front.sln` despues de la soluc
 
 ---
 
-## 9. Documentacion
+## 10. Documentacion
 Agregar al `README.md` una seccion **"Frontend"**: como levantarlo (Docker → `http://localhost:3000`; local →
 `dotnet run --project front/Abastecimiento.Front --launch-profile http` → `http://localhost:5090` con la API en 5080),
 mapa de pantallas → endpoints y como ejecutar sus pruebas. Comentarios XML en clientes, contratos y validadores propios.
 
 ---
 
-## 10. Supuestos
+## 11. Supuestos
 * **A. Sin autenticacion:** la API es publica en esta fase; el front no maneja login ni tokens.
 * **B. Solo crear y consultar:** no hay edicion ni eliminacion de tiendas, conceptos o nodos (excepto el porcentaje del nodo).
 * **C. Arbol global:** el mismo arbol aplica a todas las tiendas (supuesto A del spec de aplicacion).
@@ -306,7 +412,7 @@ mapa de pantallas → endpoints y como ejecutar sus pruebas. Comentarios XML en 
 
 ---
 
-## 11. Criterios de Aceptacion (Definition of Done)
+## 12. Criterios de Aceptacion (Definition of Done)
 1. `docker compose up -d --build` deja **db + api + front** arriba y el front responde en `http://localhost:3000`.
 2. `/tiendas/5503` muestra la tabla del enunciado: 819, 670, 482, 469, 288, 238 y el total **6,6000 espacios / 2.966 unidades**.
 3. Se puede crear una tienda, un catalogo, un tipo de espacio, un concepto y un nodo, y editar un porcentaje; los errores
@@ -316,3 +422,5 @@ mapa de pantallas → endpoints y como ejecutar sus pruebas. Comentarios XML en 
 6. `dotnet build front/Abastecimiento.Front.sln` sin warnings y `dotnet test front/Abastecimiento.Front.sln` en verde.
 7. El proyecto del front **no** referencia ningun proyecto del backend y ningun `.razor` contiene logica en `@code`.
 8. El `README.md` incluye la seccion "Frontend".
+9. La UI usa la paleta de §7 (basada en #014B43 y #F9ECE5) y **todo texto cumple ≥ 4.5:1 y toda UI/foco ≥ 3:1** contra su
+   fondo: la prueba `ContrasteTemaPruebas` pasa y no hay colores fuera de `tema.css`.

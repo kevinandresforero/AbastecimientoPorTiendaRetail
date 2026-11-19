@@ -1,19 +1,22 @@
 using Abastecimiento.Aplicacion.Dtos.ArbolComercial;
 using Abastecimiento.Aplicacion.Servicios;
+using Abastecimiento.Dominio.Entidades.Tiendas;
 using Abastecimiento.Dominio.Excepciones;
 using Abastecimiento.Pruebas.Datos;
 
 namespace Abastecimiento.Pruebas.Aplicacion;
 
-/// <summary>Lecturas y escrituras del arbol comercial (R2) con el arbol de la semilla en memoria.</summary>
+/// <summary>Lecturas y escrituras del arbol comercial (R2) con los arboles de la semilla en memoria.</summary>
 public class ServicioArbolComercialPruebas
 {
+    private readonly TiendasDePrueba datos = new();
     private readonly UnidadDeTrabajoFalsa unidadDeTrabajo = new();
+    private readonly ArbolComercialRepositorioFalso arbol = new();
     private readonly ServicioArbolComercial servicio;
 
     public ServicioArbolComercialPruebas()
     {
-        servicio = new ServicioArbolComercial(new ArbolComercialRepositorioFalso(), unidadDeTrabajo);
+        servicio = new ServicioArbolComercial(arbol, new TiendaRepositorioFalso(datos), unidadDeTrabajo);
     }
 
     [Fact]
@@ -29,18 +32,50 @@ public class ServicioArbolComercialPruebas
     [Fact]
     public async Task ArbolEnPreordenConRutaYPorcentajeAcumulado()
     {
-        var arbol = await servicio.ObtenerArbolAsync(CancellationToken.None);
+        var arbolTienda = await servicio.ObtenerArbolAsync(5503, CancellationToken.None);
 
-        Assert.Equal(18, arbol.Count);
-        Assert.Equal(new[] { 1, 2, 3, 5 }, arbol.Take(4).Select(n => n.NodoId));
-        var beauty = arbol.Single(n => n.NodoId == 2);
+        Assert.Equal(18, arbolTienda.Count);
+        Assert.Equal(new[] { 1, 2, 3, 5 }, arbolTienda.Take(4).Select(n => n.NodoId));
+        var beauty = arbolTienda.Single(n => n.NodoId == 2);
         Assert.Equal(0.3m, beauty.PorcentajeAcumulado);
         Assert.Equal("BELLEZA Y BIENESTAR > BEAUTY", beauty.Ruta);
-        var labiales = arbol.Single(n => n.NodoId == 10);
+        var labiales = arbolTienda.Single(n => n.NodoId == 10);
         Assert.Equal(0.0564m, labiales.PorcentajeAcumulado);
         Assert.True(labiales.EsHoja);
         Assert.Equal(660, labiales.UnidadesPorEspacio);
-        Assert.Equal(6, arbol.Count(n => n.EsHoja));
+        Assert.Equal(6, arbolTienda.Count(n => n.EsHoja));
+    }
+
+    [Fact]
+    public async Task CadaTiendaTieneSuPropioArbolConLosMismosPorcentajes()
+    {
+        var tienda5503 = await servicio.ObtenerArbolAsync(5503, CancellationToken.None);
+        var tienda1001 = await servicio.ObtenerArbolAsync(1001, CancellationToken.None);
+
+        Assert.Equal(18, tienda5503.Count);
+        Assert.Equal(18, tienda1001.Count);
+        Assert.Empty(tienda5503.Select(n => n.NodoId).Intersect(tienda1001.Select(n => n.NodoId)));
+        Assert.Equal(
+            tienda5503.Select(n => (n.Ruta, n.PorcentajeParticipacion)),
+            tienda1001.Select(n => (n.Ruta, n.PorcentajeParticipacion)));
+        Assert.Equal(2001, tienda1001[0].NodoId);
+    }
+
+    [Fact]
+    public async Task TiendaSinArbolDevuelveListaVacia()
+    {
+        var tienda = AgregarTienda(7000);
+
+        var arbolTienda = await servicio.ObtenerArbolAsync(tienda.CodigoHanna, CancellationToken.None);
+
+        Assert.Empty(arbolTienda);
+    }
+
+    [Fact]
+    public async Task TiendaInexistenteLanzaNoEncontrado()
+    {
+        await Assert.ThrowsAsync<NoEncontradoExcepcion>(() =>
+            servicio.ObtenerArbolAsync(9999, CancellationToken.None));
     }
 
     [Fact]
@@ -97,5 +132,100 @@ public class ServicioArbolComercialPruebas
         Assert.Equal(0.05m, nodo.PorcentajeParticipacion);
         Assert.Equal(0.015m, nodo.PorcentajeAcumulado);
         Assert.Equal(1, unidadDeTrabajo.Guardados);
+    }
+
+    [Fact]
+    public async Task CrearNodoEnUnaTiendaNoModificaElArbolDeOtra()
+    {
+        var concepto = await servicio.CrearConceptoAsync(
+            new CrearConceptoSolicitud { NivelJerarquiaId = 2, Nombre = "HOGAR" }, CancellationToken.None);
+
+        var nodo = await servicio.CrearNodoAsync(
+            1001,
+            new CrearNodoSolicitud { NodoPadreId = 2001, ConceptoComercialId = concepto.Id, PorcentajeParticipacion = 0.2m },
+            CancellationToken.None);
+
+        Assert.Equal("BELLEZA Y BIENESTAR > HOGAR", nodo.Ruta);
+        Assert.Equal(19, (await servicio.ObtenerArbolAsync(1001, CancellationToken.None)).Count);
+        Assert.Equal(18, (await servicio.ObtenerArbolAsync(5503, CancellationToken.None)).Count);
+    }
+
+    [Fact]
+    public async Task NodoConPadreDeOtraTiendaLanzaValidacion()
+    {
+        var concepto = await servicio.CrearConceptoAsync(
+            new CrearConceptoSolicitud { NivelJerarquiaId = 2, Nombre = "HOGAR" }, CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<ValidacionDominioExcepcion>(() => servicio.CrearNodoAsync(
+            1001,
+            new CrearNodoSolicitud { NodoPadreId = 1, ConceptoComercialId = concepto.Id, PorcentajeParticipacion = 0.2m },
+            CancellationToken.None));
+
+        Assert.Contains(ex.Errores, e => e.Contains("tienda"));
+    }
+
+    [Fact]
+    public async Task CopiarArbolCreaNodosNuevosEIndependientes()
+    {
+        var destino = AgregarTienda(7000);
+
+        var copia = await servicio.CopiarArbolAsync(destino.CodigoHanna, 5503, CancellationToken.None);
+
+        Assert.Equal((5503, 7000, 18), (copia.CodigoHannaOrigen, copia.CodigoHannaDestino, copia.NodosCopiados));
+        var arbolDestino = await servicio.ObtenerArbolAsync(destino.CodigoHanna, CancellationToken.None);
+        var arbolOrigen = await servicio.ObtenerArbolAsync(5503, CancellationToken.None);
+        Assert.Equal(18, arbolDestino.Count);
+        Assert.Empty(arbolDestino.Select(n => n.NodoId).Intersect(arbolOrigen.Select(n => n.NodoId)));
+        var nodosDestino = await arbol.ObtenerArbolPorTiendaAsync(destino.Id, CancellationToken.None);
+        Assert.Equal(18, nodosDestino.Count);
+        Assert.All(nodosDestino, n => Assert.Equal(destino.Id, n.TiendaId));
+        Assert.Equal(
+            arbolOrigen.Select(n => (n.Ruta, n.PorcentajeParticipacion, n.PorcentajeAcumulado)),
+            arbolDestino.Select(n => (n.Ruta, n.PorcentajeParticipacion, n.PorcentajeAcumulado)));
+        Assert.Equal(1, unidadDeTrabajo.Guardados);
+    }
+
+    [Fact]
+    public async Task CopiarArbolADestinoConNodosLanzaConflicto()
+    {
+        await Assert.ThrowsAsync<ConflictoExcepcion>(() =>
+            servicio.CopiarArbolAsync(1001, 5503, CancellationToken.None));
+
+        Assert.Equal(0, unidadDeTrabajo.Guardados);
+    }
+
+    [Fact]
+    public async Task CopiarArbolDeOrigenVacioLanzaValidacion()
+    {
+        var origen = AgregarTienda(7000);
+        var destino = AgregarTienda(7001);
+
+        await Assert.ThrowsAsync<ValidacionDominioExcepcion>(() =>
+            servicio.CopiarArbolAsync(destino.CodigoHanna, origen.CodigoHanna, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CopiarArbolDeTiendaInexistenteLanzaNoEncontrado()
+    {
+        var destino = AgregarTienda(7000);
+
+        await Assert.ThrowsAsync<NoEncontradoExcepcion>(() =>
+            servicio.CopiarArbolAsync(destino.CodigoHanna, 9999, CancellationToken.None));
+    }
+
+    private Tienda AgregarTienda(int codigoHanna)
+    {
+        var tienda = new Tienda
+        {
+            Id = datos.Tiendas.Max(t => t.Id) + 1,
+            CodigoHanna = codigoHanna,
+            Nombre = $"TIENDA {codigoHanna}",
+            MarcaTiendaId = 1,
+            RegionalId = 1,
+            TipoTiendaId = 1
+        };
+        datos.Enlazar(tienda);
+        datos.Tiendas.Add(tienda);
+        return tienda;
     }
 }

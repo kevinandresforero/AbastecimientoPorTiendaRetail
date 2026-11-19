@@ -1,5 +1,4 @@
 using Abastecimiento.Dominio.Entidades.ArbolComercial;
-using Abastecimiento.Dominio.Reglas;
 
 namespace Abastecimiento.Aplicacion.Helpers;
 
@@ -28,13 +27,14 @@ public static class ArbolComercialHelper
 {
     public const string SeparadorRuta = " > ";
 
-    public static ArbolIndexado Indexar(IReadOnlyList<NodoComercial> nodos)
+    /// <summary>
+    /// Indexa los nodos. La profundidad hoja se recibe de <c>NivelesJerarquia</c>: un arbol a medio armar no debe
+    /// confundir su ultimo nodo presente con el nivel hoja real.
+    /// </summary>
+    public static ArbolIndexado Indexar(IReadOnlyList<NodoComercial> nodos, int profundidadHoja)
     {
         var ordenados = nodos.OrderBy(n => n.Id).ToList();
         var hijosDe = ordenados.ToLookup(n => n.NodoPadreId);
-        var profundidadHoja = ordenados.Count == 0
-            ? 0
-            : ValidadorArbolComercial.ObtenerProfundidadHoja(ordenados.Select(n => n.ConceptoComercial.NivelJerarquia));
 
         return new ArbolIndexado(ordenados.ToDictionary(n => n.Id), hijosDe, hijosDe[null].ToList(), profundidadHoja);
     }

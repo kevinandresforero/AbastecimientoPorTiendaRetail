@@ -89,7 +89,7 @@ internal sealed class ArbolComercialRepositorioFalso : IArbolComercialRepositori
 
     public ArbolComercialRepositorioFalso()
     {
-        (nodos, niveles) = ArbolDePrueba.DesdeSemilla();
+        (nodos, niveles) = ArbolDePrueba.DesdeSemillaTodasLasTiendas();
         conceptos = nodos.Select(n => n.ConceptoComercial).DistinctBy(c => c.Id).ToList();
     }
 
@@ -107,6 +107,11 @@ internal sealed class ArbolComercialRepositorioFalso : IArbolComercialRepositori
     public Task AgregarNodoAsync(NodoComercial nodo, CancellationToken ct = default)
     {
         nodo.Id = nodos.Max(n => n.Id) + 1;
+        if (nodo.NodoPadre is not null)
+        {
+            nodo.NodoPadreId = nodo.NodoPadre.Id;
+        }
+
         nodo.ConceptoComercial = conceptos.Single(c => c.Id == nodo.ConceptoComercialId);
         nodos.Add(nodo);
         return Task.CompletedTask;
@@ -131,6 +136,33 @@ internal sealed class ArbolComercialRepositorioFalso : IArbolComercialRepositori
 
     public Task<NodoComercial?> ObtenerNodoParaEditarAsync(int id, CancellationToken ct = default) =>
         Task.FromResult(nodos.SingleOrDefault(n => n.Id == id));
+
+    public Task<IReadOnlyList<NodoComercial>> ObtenerArbolPorTiendaAsync(int tiendaId, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<NodoComercial>>(nodos.Where(n => n.TiendaId == tiendaId).OrderBy(n => n.Id).ToList());
+
+    public Task<bool> ExisteNodoAsync(int tiendaId, int? nodoPadreId, int conceptoComercialId, CancellationToken ct = default) =>
+        Task.FromResult(nodos.Any(n =>
+            n.TiendaId == tiendaId && n.NodoPadreId == nodoPadreId && n.ConceptoComercialId == conceptoComercialId));
+
+    public async Task AgregarNodosAsync(IEnumerable<NodoComercial> nuevos, CancellationToken ct = default)
+    {
+        // Como EF: los hijos se enlazan por navegacion, asi que el padre debe recibir su Id antes que ellos.
+        var pendientes = nuevos.ToList();
+        while (pendientes.Count > 0)
+        {
+            var listos = pendientes.Where(n => n.NodoPadre is null || nodos.Contains(n.NodoPadre)).ToList();
+            if (listos.Count == 0)
+            {
+                throw new InvalidOperationException("Los nodos a agregar tienen padres fuera del lote o ciclos.");
+            }
+
+            foreach (var nodo in listos)
+            {
+                await AgregarNodoAsync(nodo, ct);
+                pendientes.Remove(nodo);
+            }
+        }
+    }
 }
 
 internal sealed class UnidadDeTrabajoFalsa : IUnidadDeTrabajo

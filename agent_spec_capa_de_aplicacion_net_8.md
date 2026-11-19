@@ -294,6 +294,67 @@ Estos metodos se agregan a `agent_spec_capa_de_datos_net_8.md` §5.3 (marcados "
 * `ICatalogoRepositorio<T>`: `ExisteAsync(int id)`, `ExisteNombreAsync(string nombre)`.
 * Nuevo `ITipoEspacioRepositorio`: `ObtenerTodosAsync`, `ObtenerPorIdsAsync(IReadOnlyCollection<int> ids)`, `ExisteNombreAsync`, `AgregarAsync`.
 
+### 11.1. Uso del modelo: arbol comercial por tienda (PENDIENTE de adoptar en esta capa)
+La capa de datos ya implementa el arbol por tienda (`agent_spec_capa_de_datos_net_8.md` §4.2, migracion `ArbolPorTienda`
+§7.1). Esta seccion describe **como debe usarlo la capa de aplicacion**; el codigo de aplicacion aun no lo adopta.
+
+**Que cambio en el modelo**
+* `NodoComercial.TiendaId` (requerido, FK Restrict a `tiendas.Tiendas`): cada tienda tiene **su propio arbol**. Sus raices
+  son sus **unidades de negocio** y el `PorcentajeParticipacion` de una raiz es la fraccion de los espacios de la tienda
+  que recibe (ej. BELLEZA Y BIENESTAR 0.30 + DEPORTE 0.70). Conceptos y niveles siguen siendo globales.
+* La semilla trae el mismo arbol para las 3 tiendas: Ids 1–18 (5503, TiendaId 1), 2001–2018 (1001, TiendaId 2) y
+  3001–3018 (2045, TiendaId 3). `ObtenerArbolCompletoAsync()` ahora devuelve **54** nodos.
+* La BD rechaza: una unidad de negocio repetida en la misma tienda (`UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz`),
+  un nodo de una tienda inexistente y borrar una tienda que tiene arbol (`FK_NodosComerciales_Tiendas_TiendaId`).
+* `ValidadorArbolComercial`: **regla 5** (padre e hijo de la misma tienda) en `ValidarNodo` y `ValidarArbol`; los hermanos
+  se agrupan por `(TiendaId, NodoPadreId)`.
+
+**Metodos de repositorio disponibles** (`IArbolComercialRepositorio`)
+| Metodo | Uso en esta capa |
+|---|---|
+| `ObtenerArbolPorTiendaAsync(int tiendaId)` | Arbol de **una** tienda en una SELECT (con concepto y nivel, sin seguimiento). Tienda sin nodos → lista vacia. |
+| `ObtenerArbolCompletoAsync()` | Solo para **reportes** (todas las tiendas en una SELECT); agrupar en memoria por `TiendaId`. **No** usarlo para calcular una tienda. |
+| `ExisteNodoAsync(int tiendaId, int? nodoPadreId, int conceptoComercialId)` | Duplicados dentro de la tienda; con `nodoPadreId` null = unidad de negocio repetida. Reemplaza a la sobrecarga sin tienda (que se mantiene solo por compatibilidad y debe dejar de usarse). |
+| `AgregarNodosAsync(IEnumerable<NodoComercial>)` | Alta en lote (copia de arbol): enlazar hijos con la navegacion `NodoPadre` y confirmar con **un** `GuardarCambiosAsync`. |
+| `ObtenerNodoParaEditarAsync(int id)` | Sin cambios de firma; el nodo trae `TiendaId`. |
+
+**Ajustes obligatorios en los servicios**
+1. **`ServicioCarga`** (R3/R4a): `ObtenerArbolPorTiendaAsync(tienda.Id)` en lugar de `ObtenerArbolCompletoAsync()`.
+   Con el arbol completo el motor recibe 3 raices al 100% y la carga sale **triplicada** (5503: 8,898 en vez de 2,966).
+   Tienda sin nodos → `totalCarga = 0` y advertencia "La tienda no tiene unidades de negocio".
+2. **Profundidad hoja:** obtenerla de `ObtenerNivelesAsync()` + `ValidadorArbolComercial.ObtenerProfundidadHoja(niveles)`,
+   no de los nodos presentes (`ArbolComercialHelper.Indexar` hoy la deriva de los nodos; el arbol de una tienda puede
+   estar a medio armar). Pasarla al motor/helper como parametro.
+3. **`ServicioReportes`** (R4b): una sola lectura con `ObtenerArbolCompletoAsync()`; agrupar con
+   `nodos.ToLookup(n => n.TiendaId)` y llamar al motor por tienda con **su** arbol.
+4. **`ServicioArbolComercial`** (R2), todo por tienda:
+   * Obtener el arbol: `ObtenerArbolPorTiendaAsync(tienda.Id)`.
+   * Crear nodo: asignar `nodo.TiendaId = tienda.Id` (hoy no se asigna y la regla 5 lo rechaza); el padre debe ser de la
+     misma tienda (si no → 400); hermanos = nodos de la tienda con el mismo `NodoPadreId` (para una raiz, las demas
+     unidades de negocio); repetidos con `ExisteNodoAsync(tienda.Id, …)` → 409.
+   * Actualizar porcentaje: hermanos de la misma tienda (excluyendo el nodo).
+   * Copiar arbol (nuevo): clonar los nodos de la tienda origen con `TiendaId` destino, enlazados por `NodoPadre`;
+     `AgregarNodosAsync` + un `GuardarCambiosAsync`. Si la tienda destino ya tiene nodos → 409.
+
+**Endpoints sugeridos (por tienda)**
+| Metodo y ruta | Reemplaza a | Respuestas |
+|---|---|---|
+| `GET /api/tiendas/{codigoHanna}/arbol-comercial` | `GET /api/arbol-comercial` | 200 / 404 |
+| `POST /api/tiendas/{codigoHanna}/nodos-comerciales` (`nodoPadreId` null = nueva unidad de negocio) | `POST /api/nodos-comerciales` | 201 / 400 / 404 / 409 |
+| `PUT /api/nodos-comerciales/{id}/porcentaje` | (se mantiene; valida hermanos de la tienda del nodo) | 200 / 400 / 404 |
+| `POST /api/tiendas/{codigoHanna}/arbol-comercial/copiar-desde/{codigoHannaOrigen}` | (nuevo) | 201 / 404 / 409 |
+| `GET /api/carga/{codigoHanna}` y `GET /api/reportes/consolidado` | (se mantienen; cambian por dentro) | sin cambios |
+
+El front (`/api/arbol-comercial`, `/api/nodos-comerciales`) debe migrar a las rutas por tienda al mismo tiempo.
+
+**Resultados esperados con la semilla** (mismo arbol en las 3 tiendas): 5503 = **2,966**, 1001 = **4,046**,
+2045 = **2,696**; `GET /api/tiendas/5503/arbol-comercial` → 18 nodos.
+
+**Pruebas que hoy fallan y deben volver a verde al adoptar este cambio** (verificado con el SDK de .NET 8):
+`ApiPruebas.CargaDe5503Devuelve2966Unidades` (hoy 8,898), `ApiPruebas.ConsolidadoPorMarcaDeProductoYPorTienda`
+(hoy 26,790 en vez de 8,930), `ApiPruebas.NivelesYArbolExponenLosSieteNivelesDeLaSemilla` (hoy 54 nodos en vez de 18) y
+`ServiciosPruebas.CrearNodoValidoDevuelvePorcentajeAcumuladoYRuta` (el servicio no asigna `TiendaId`). No desactivarlas.
+
 ---
 
 ## 12. Pruebas (`tests/Abastecimiento.Pruebas`)
@@ -306,10 +367,16 @@ Estos metodos se agregan a `agent_spec_capa_de_datos_net_8.md` §5.3 (marcados "
 
 Las pruebas de API que crean datos usan una base de datos propia (`Abastecimiento_Pruebas`) o revierten sus cambios, para no alterar la semilla.
 
+
+> **Runtime de las pruebas:** ejecutarlas con el runtime de **.NET 8**. Con `DOTNET_ROLL_FORWARD=Major` sobre .NET 10, todas
+> las pruebas de API fallan con `The PipeWriter 'ResponseBodyPipeWriter' does not implement PipeWriter.UnflushedBytes`
+> (el `TestServer` de ASP.NET Core 8 no implementa lo que exige `System.Text.Json` 10); no es un error del codigo. Sin
+> .NET 8 instalado: `docker run --rm --network host -v "$PWD":/src -w /src -e ABASTECIMIENTO_PRUEBAS_SQL=... mcr.microsoft.com/dotnet/sdk:8.0 dotnet test tests/Abastecimiento.Pruebas`.
+
 ---
 
 ## 13. Supuestos
-* **A. Arbol global** (heredado): todas las tiendas usan el mismo arbol; 1001 y 2045 se calculan con el mismo arbol que 5503.
+* **A. Arbol por tienda** (spec de datos §10.A): cada tienda tiene su propio arbol (unidades de negocio, jerarquia y porcentajes); en la semilla las 3 tiendas tienen el mismo arbol. Ver §11.1.
 * **B. Redondeo:** `AwayFromZero` por defecto, configurable; se aplica por linea. `totalCarga` = Σ lineas redondeadas (coincide con el enunciado; para 5503 ambas convenciones dan 2,966).
 * **C. Precision en la respuesta:** la API devuelve los decimales significativos completos (hasta 28; ej. 1.67508, sin ceros sobrantes); el formato visual (ej. 4 decimales del enunciado) es responsabilidad del cliente. Ver §2 (28 decimales en el calculo, 6 en la BD).
 * **F. Capacidad y redondeo por linea:** redondear cada linea al entero mas cercano puede sumar hasta media unidad por linea por encima de la carga exacta. Con la semilla: 5503 → 2,966 sobre 2,966.49 exactas y 2045 → 2,696 sobre 2,696.81 (no superan); 1001 → 4,046 sobre 4,045.2156 (supera por 0.78 unidades). El enunciado no exige un tope de capacidad; si negocio no admite exceso se configura `Calculo:ModoRedondeo = ToZero` (entero inferior: 5503 → 2,964, nunca supera).

@@ -7,7 +7,9 @@ abastecimiento retail usando **C# (.NET 8)**, **Entity Framework Core 8** y **SQ
 
 El sistema persiste:
 - Tiendas fisicas con su capacidad de exhibicion (mobiliario + espacios perimetrales).
-- Un arbol comercial jerarquico **dinamico** (7 niveles en la semilla, extensible sin cambiar el esquema).
+- Un arbol comercial jerarquico **dinamico** (7 niveles en la semilla, extensible sin cambiar el esquema) y **propio de cada
+  tienda**: cada tienda elige sus unidades de negocio (nivel 1) con su porcentaje y su jerarquia y porcentajes debajo
+  (ver §4.2 y la migracion `ArbolPorTienda`, §7.1).
 - Un modulo de seguridad (usuarios, roles y sesiones de token JWT) **solo a nivel de datos**.
 
 La base de datos se crea y se puebla automaticamente al arrancar la aplicacion (migraciones + `HasData`).
@@ -22,7 +24,9 @@ La base de datos se crea y se puebla automaticamente al arrancar la aplicacion (
 * **Calculos:** todos los calculos multinivel (cascada, carga, consolidados) viven en el **backend** (`MotorCalculoCarga`, capa Aplicacion). La BD solo guarda parametros. Redondeo unicamente sobre la Carga Total final.
 * **No persistir derivables:** no se guardan espacios totales, nivel del nodo, nivel hoja, espacios por nodo, cargas, consolidados, sesion activa, ultimo acceso.
 * **Estandarizar repetibles:** todo valor que se repite entre filas es catalogo con FK (o enum con CHECK cuando el codigo depende de sus valores). Unico texto libre de negocio: `Tienda.Nombre`.
-* **Rendimiento (anti N+1):** PROHIBIDO lazy loading (no instalar Proxies). El arbol comercial se lee en **una sola SELECT** con `AsNoTracking()` y se procesa en memoria.
+* **Rendimiento (anti N+1):** PROHIBIDO lazy loading (no instalar Proxies). El arbol comercial **de una tienda** se lee en
+  **una sola SELECT** con `AsNoTracking()` y se procesa en memoria; los reportes leen los arboles de todas las tiendas
+  tambien en una sola SELECT.
 * **Integridad referencial:** `DeleteBehavior.Restrict` en relaciones a catalogos y en la relacion auto-referenciada del arbol; `NoAction` en la auto-referencia de sesiones. `Cascade` solo donde el hijo no existe sin el padre (`EspaciosTienda`, `UsuariosRoles`, `SesionesToken`).
 * **Nulabilidad:** `<Nullable>enable</Nullable>` en todos los proyectos; compilacion sin warnings.
 * **Esquemas por bloque:** ninguna tabla de negocio vive en `dbo` (ver seccion 4.4).
@@ -88,27 +92,41 @@ En Infraestructura, `ConfiguracionCatalogo<T>` aplica esquema, MaxLength y `UQ_<
 |---|---|---|
 | `nodoscomerciales.NivelesJerarquia` (`NivelJerarquia`) | Id `int` (sin identity), Nombre(50), Profundidad `int` | `UQ_NivelesJerarquia_Nombre`; `UQ_NivelesJerarquia_Profundidad`; `CK_NivelesJerarquia_Profundidad`: `>= 1` |
 | `nodoscomerciales.ConceptosComerciales` (`ConceptoComercial`) | Id, NivelJerarquiaId, Nombre(100), UnidadesPorEspacio `int?` | `UQ_ConceptosComerciales_NivelJerarquiaId_Nombre`; FK Restrict; `CK_ConceptosComerciales_UnidadesPorEspacio`: `IS NULL OR > 0` |
-| `nodoscomerciales.NodosComerciales` (`NodoComercial`) | Id, NodoPadreId?, ConceptoComercialId, PorcentajeParticipacion `decimal(18,6)` | FK auto-referenciada **Restrict**; FK Concepto Restrict; `CK_NodosComerciales_PorcentajeParticipacion`: `> 0 AND <= 1`; `UQ_NodosComerciales_NodoPadreId_ConceptoComercialId` |
+| `nodoscomerciales.NodosComerciales` (`NodoComercial`) | Id, **TiendaId**, NodoPadreId?, ConceptoComercialId, PorcentajeParticipacion `decimal(18,6)` | FK **`TiendaId` → `tiendas.Tiendas` Restrict** (`FK_NodosComerciales_Tiendas_TiendaId`); FK auto-referenciada **Restrict**; FK Concepto Restrict; `CK_NodosComerciales_PorcentajeParticipacion`: `> 0 AND <= 1`; `UQ_NodosComerciales_NodoPadreId_ConceptoComercialId` (hijos); **`UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz`** (filtrado `[NodoPadreId] IS NULL`: una unidad de negocio no se repite en la misma tienda); **`IX_NodosComerciales_TiendaId`** |
 
-* **Concepto** = *que es* ("GIRLS", "LABIALES" con 660 unid./esp.), definido una sola vez.
-* **Nodo** = *donde esta* en el arbol y *con que %* respecto a su padre. "GIRLS" bajo LILI BEAUTY y bajo KARITE son 2 nodos que comparten 1 concepto.
-* Navegaciones: `NodoComercial.NodoPadre?`, `NodoComercial.NodosHijos` (inicializada), `NodoComercial.ConceptoComercial`, `ConceptoComercial.NivelJerarquia`.
+* **Concepto** = *que es* ("GIRLS", "LABIALES" con 660 unid./esp.), definido una sola vez y **compartido por todas las tiendas**.
+* **Nodo** = *donde esta* en el arbol **de una tienda** y *con que %* respecto a su padre. "GIRLS" bajo LILI BEAUTY y bajo KARITE son 2 nodos que comparten 1 concepto; el mismo concepto en dos tiendas son nodos distintos.
+* **Arbol por tienda:** cada tienda tiene su propio arbol completo. Sus **raices son sus unidades de negocio** y el
+  `PorcentajeParticipacion` de una raiz es la fraccion de los espacios de la tienda que recibe esa unidad (ej. BELLEZA Y
+  BIENESTAR 0.300000 + DEPORTE 0.700000). Debajo, cada tienda define su jerarquia y porcentajes. Una tienda sin nodos no
+  tiene unidades de negocio (su calculo devuelve 0 con advertencia, responsabilidad de la capa de aplicacion).
+* `TiendaId` se repite en todos los nodos del arbol (tambien en los hijos) en lugar de derivarse subiendo hasta la raiz:
+  permite leer el arbol de una tienda en **una SELECT** por indice y validar con FK. Invariante: **padre e hijo siempre
+  tienen el mismo `TiendaId`** (regla 5 del validador).
+* Navegaciones: `NodoComercial.Tienda`, `NodoComercial.NodoPadre?`, `NodoComercial.NodosHijos` (inicializada), `NodoComercial.ConceptoComercial`, `ConceptoComercial.NivelJerarquia`. `Tienda` **no** expone coleccion de nodos (el arbol se lee por repositorio).
 * El nivel del nodo se **deriva** de `ConceptoComercial.NivelJerarquia.Profundidad` (no se duplica en el nodo).
-* El nivel hoja se **deriva**: `MAX(Profundidad)` (no se guarda un flag).
+* El nivel hoja se **deriva**: `MAX(Profundidad)` **de `NivelesJerarquia`** (no se guarda un flag). No se deriva de los
+  nodos presentes: el arbol de una tienda puede estar a medio armar.
 * `UnidadesPorEspacio` pertenece al concepto del nivel hoja (Tipo de Producto).
 
 **`ValidadorArbolComercial`** (Dominio) — reglas que cruzan filas (no expresables como CHECK):
 1. Raiz ⇔ `Profundidad = 1`; en otro caso `Profundidad(hijo) = Profundidad(padre) + 1`.
 2. Concepto del nivel hoja ⇒ `UnidadesPorEspacio` obligatorio; concepto de otro nivel ⇒ `null`.
 3. Σ `PorcentajeParticipacion` de hermanos ≤ 1 (≤ y no =, porque la semilla es parcial: BEAUTY = 30% sin hermanas).
+   Hermanos = mismo `NodoPadreId` **y mismo `TiendaId`**; para las raices, las unidades de negocio de la tienda
+   (ej. 0.30 + 0.70 = 1 valido; 0.30 + 0.80 rechazado). No se exige suma exacta de 1 (decision del usuario).
 4. Ramas que no alcanzan el nivel hoja → advertencia en el calculo, no error.
+5. **Padre e hijo pertenecen a la misma tienda** (`nodo.TiendaId == padre.TiendaId`); si no → `ValidacionDominioExcepcion`.
+   `ValidarArbol` agrupa los hermanos por `(TiendaId, NodoPadreId)`.
 
 **Extensibilidad de niveles (soportada por el modelo, NO implementada como endpoint):**
 * Nivel al final: INSERT en `NivelesJerarquia` con `Profundidad = max + 1`, crear conceptos/nodos hoja y mover `UnidadesPorEspacio` al nuevo nivel hoja.
 * Nivel intermedio: en una transaccion, `UPDATE Profundidad = Profundidad + 1` de los niveles inferiores, INSERT del nuevo nivel, creacion de nodos intermedios (100% por defecto) y re-asignacion de `NodoPadreId` de los hijos. Ninguna FK cambia porque `Id ≠ Profundidad`.
 * Ningun CHECK ni constante de codigo menciona "7".
 
-> Nota EF/SQL Server: el indice unico con `NodoPadreId` nullable se genera con filtro `[NodoPadreId] IS NOT NULL`; no restringe raices duplicadas (aceptado y documentado).
+> Nota EF/SQL Server: el indice unico con `NodoPadreId` nullable se genera con filtro `[NodoPadreId] IS NOT NULL` y no
+> restringe raices; por eso existe `UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz` con
+> `HasFilter("[NodoPadreId] IS NULL")` (las raices duplicadas **en la misma tienda** quedan rechazadas por la BD).
 > Por ser un indice filtrado, toda escritura sobre `NodosComerciales` requiere `SET QUOTED_IDENTIFIER ON` (EF Core/ADO.NET y SSMS lo activan por defecto; `sqlcmd` requiere `-I`).
 
 ### 4.3. Bloque Seguridad (JWT Bearer) — SOLO DATOS (esquema `auth`)
@@ -136,7 +154,9 @@ Reglas de diseno:
 * Derivados no persistidos: sesion activa (`FechaRevocacionUtc IS NULL AND FechaExpiracionUtc > ahora`), usuario bloqueado (`BloqueadoHastaUtc > ahora`), ultimo acceso (`MAX(FechaEmisionUtc)`).
 
 ### 4.4. Esquemas
-Cada bloque vive en su propio esquema; no existen FK entre esquemas (los bloques son independientes).
+Cada bloque vive en su propio esquema. Los bloques son independientes, con **una unica FK entre esquemas**:
+`nodoscomerciales.NodosComerciales.TiendaId → tiendas.Tiendas.Id` (el arbol pertenece a una tienda; ver §8).
+El bloque `auth` no tiene FK hacia los demas.
 
 | Esquema | Tablas |
 |---|---|
@@ -165,6 +185,8 @@ Cada bloque vive en su propio esquema; no existen FK entre esquemas (los bloques
 | Tienda por HANNA (motor, desglose) | `UQ_Tiendas_CodigoHanna` |
 | Consolidado / filtro por regional y marca | `IX_Tiendas_RegionalId_MarcaTiendaId` + `IX_Tiendas_MarcaTiendaId`, `IX_Tiendas_TipoTiendaId`, `IX_Tiendas_ResponsableVisualId` |
 | Espacios de una tienda | `PK_EspaciosTienda (TiendaId, TipoEspacioId)` + `IX_EspaciosTienda_TipoEspacioId` |
+| Arbol de una tienda (calculo de carga, lectura del arbol) | `IX_NodosComerciales_TiendaId` |
+| Unidades de negocio de una tienda / raiz repetida | `UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz` (filtrado `[NodoPadreId] IS NULL`) |
 | Hijos de un nodo | `UQ_NodosComerciales_NodoPadreId_ConceptoComercialId` (columna lider = padre) |
 | Nodos por concepto | `IX_NodosComerciales_ConceptoComercialId` |
 | Conceptos por nivel | `UQ_ConceptosComerciales_NivelJerarquiaId_Nombre` |
@@ -203,6 +225,22 @@ Lecturas con `AsNoTracking()`.
   * `Task<IReadOnlyList<TipoEspacio>> ObtenerPorIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default);`
   * `Task<bool> ExisteNombreAsync(string nombre, CancellationToken ct = default);`
   * `Task AgregarAsync(TipoEspacio tipoEspacio, CancellationToken ct = default);`
+
+**Requeridos por el arbol por tienda** (migracion `ArbolPorTienda`, §7.1):
+* `IArbolComercialRepositorio`
+  * `Task<IReadOnlyList<NodoComercial>> ObtenerArbolPorTiendaAsync(int tiendaId, CancellationToken ct = default);` —
+    `Where(n => n.TiendaId == tiendaId)` + `Include(ConceptoComercial).ThenInclude(NivelJerarquia)`, `AsNoTracking`,
+    orden por `Id`: **una sola SELECT** (usa `IX_NodosComerciales_TiendaId`). Tienda sin nodos → lista vacia.
+  * `ObtenerArbolCompletoAsync()` **se conserva** con la misma firma: devuelve los nodos de **todas** las tiendas (ahora
+    con `TiendaId`) en una SELECT; la usan los reportes, que agrupan por `TiendaId` en memoria.
+  * `Task<bool> ExisteNodoAsync(int tiendaId, int? nodoPadreId, int conceptoComercialId, CancellationToken ct = default);`
+    — nueva sobrecarga: con `nodoPadreId` null valida la unidad de negocio repetida **dentro de la tienda**.
+    La sobrecarga anterior `ExisteNodoAsync(int? nodoPadreId, int conceptoComercialId, ...)` **se mantiene** para no
+    romper la capa de aplicacion; la eliminara el agente de aplicacion al adoptar la nueva.
+  * `Task AgregarNodosAsync(IEnumerable<NodoComercial> nodos, CancellationToken ct = default);` — alta en lote (copia del
+    arbol de una tienda a otra; los nuevos nodos se enlazan por la navegacion `NodoPadre` y se guardan con un solo
+    `GuardarCambiosAsync`).
+* `ObtenerNodoParaEditarAsync` incluye `TiendaId` (columna escalar, sin cambios de firma).
 
 > Con `AsNoTracking()` EF **no** enlaza `NodoPadre`/`NodosHijos` entre las entidades devueltas. El motor construye el arbol en memoria con `nodos.ToLookup(n => n.NodoPadreId)`; no depende de esas navegaciones.
 
@@ -272,7 +310,22 @@ Totales esperados: 5503 = **22**, 1001 = **30**, 2045 = **20**.
 | 14 | 7 | BASE / POLVOS | 310 |
 | 15 | 7 | BÁLSAMO LABIAL | 600 |
 
-### `NodosComerciales` (18)
+### `NodosComerciales` (54 = 3 tiendas × 18)
+Cada tienda de la semilla tiene **el mismo arbol** (BELLEZA Y BIENESTAR al 100%), por eso sus cargas no cambian respecto al
+arbol global anterior. La tabla define el arbol de **5503 (TiendaId 1, Ids 1–18)**; los de 1001 y 2045 se generan a partir
+de ella en `DatosSemilla` (sin duplicar literales) con esta regla:
+
+| Tienda | TiendaId | Ids | NodoPadreId |
+|---|---|---|---|
+| 5503 | 1 | 1–18 (los de la tabla) | los de la tabla |
+| 1001 | 2 | `2000 + Id` → 2001–2018 | `2000 + NodoPadreId` (raiz: null) |
+| 2045 | 3 | `3000 + Id` → 3001–3018 | `3000 + NodoPadreId` (raiz: null) |
+
+Mismo `ConceptoComercialId` y `PorcentajeParticipacion` que el nodo de origen. Los rangos 2000/3000 evitan choques con
+nodos que un usuario ya haya creado en una BD existente (identity).
+`DatosSemilla.NodosComerciales` devuelve los 54; `DatosSemilla.NodosComercialesDeTienda(int tiendaId)` devuelve los 18 de
+una tienda (lo usan las pruebas).
+
 | Id | NodoPadreId | ConceptoComercialId | PorcentajeParticipacion | (referencia) |
 |---|---|---|---|---|
 | 1 | null | 1 | 1.000000 | BELLEZA Y BIENESTAR |
@@ -322,6 +375,9 @@ Totales esperados: 5503 = **22**, 1001 = **30**, 2045 = **20**.
 | KARITE > LABIOS > BÁLSAMO LABIAL | 0.396 | 600 | 238 |
 | **TOTAL BEAUTY** | **6.6** | | **2,966** |
 
+Con su propio arbol (identico) las otras tiendas conservan sus resultados: **1001 = 4,046** (30 espacios) y
+**2045 = 2,696** (20 espacios).
+
 ---
 
 ## 7. Inicializacion Automatica (`Program.cs`)
@@ -334,6 +390,50 @@ Cadena de conexion `ConnectionStrings:Abastecimiento` en `appsettings.json` (Loc
 Es un artefacto derivado: se regenera tras cada migracion nueva con
 `dotnet ef migrations script --idempotent -p src/Abastecimiento.Infraestructura -s src/Abastecimiento.Api -o database/script_inicial.sql`.
 
+### 7.1. Migracion `ArbolPorTienda` (cambio sobre una BD existente)
+Segunda migracion; **no** se modifica `MigracionInicial`. Crear con
+`dotnet ef migrations add ArbolPorTienda -p src/Abastecimiento.Infraestructura -s src/Abastecimiento.Api` y **revisar el
+codigo generado** antes de aplicarlo. Orden obligatorio dentro de `Up`:
+1. `AddColumn<int>("TiendaId", schema: "nodoscomerciales", table: "NodosComerciales", nullable: false, defaultValue: 1)`.
+   **Editar a mano** el `defaultValue` que genera EF (0) por **1**: todos los nodos existentes, incluidos los que un
+   usuario haya creado a mano con el arbol global, quedan en la tienda 1 (5503), que era la referencia del arbol global.
+   Sin esto la FK del paso 4 falla.
+2. Datos: `UpdateData` de los nodos 1–18 (TiendaId 1) e `InsertData` de los 36 nodos de 1001 (2001–2018) y 2045
+   (3001–3018), en orden de padre a hijo.
+3. Indices: `IX_NodosComerciales_TiendaId` y `UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz` (filtrado). Si la BD
+   ya tuviera raices repetidas en 5503, este indice falla: se considera un dato invalido que debe corregirse a mano.
+4. `AddForeignKey` `FK_NodosComerciales_Tiendas_TiendaId` → `tiendas.Tiendas(Id)` con `ReferentialAction.Restrict`.
+
+`Down` revierte en orden inverso (FK, indices, nodos 2001–3018, columna). Tras crearla:
+* `dotnet ef migrations has-pending-model-changes` → "No changes have been made to the model since the last migration".
+* Regenerar `database/script_inicial.sql` (idempotente, ahora con ambas migraciones).
+* Probar la migracion sobre una BD que ya tenga `MigracionInicial` aplicada (la de Docker o LocalDB) y sobre una vacia.
+
+### 7.2. Coordinacion con la capa de aplicacion (OBLIGATORIO)
+Este cambio de datos **debe entregarse junto con** el ajuste de la capa de aplicacion (`agent_spec_capa_de_aplicacion_net_8.md`),
+nunca solo. Mientras la aplicacion siga leyendo `ObtenerArbolCompletoAsync()` para calcular una tienda, recibiria los
+**54** nodos (los 3 arboles) y la carga de 5503 saldria triplicada. Lo que corresponde a la aplicacion (fuera de este spec):
+calcular con `ObtenerArbolPorTiendaAsync`, profundidad hoja desde `NivelesJerarquia`, rutas por tienda
+(`/api/tiendas/{codigoHanna}/arbol-comercial`, `/nodos-comerciales`, copia de arbol) y reportes agrupados por `TiendaId`.
+
+Para no romper las pruebas unitarias existentes, el agente de datos ajusta los datos de prueba:
+* `tests/.../Datos/ArbolDePrueba.DesdeSemilla(int tiendaId = 1)`: devuelve solo el arbol de esa tienda (18 nodos) con
+  sus navegaciones enlazadas. Con el valor por defecto, las pruebas actuales del motor y de los servicios siguen
+  calculando 5503 = 2,966.
+* `ModeloEfPruebas` existentes que cambian: `LaSemillaTieneLosConteosDeLaSpec` (`NodoComercial` 18 → **54**) y la lista
+  de indices esperados (agregar `UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz` e `IX_NodosComerciales_TiendaId`).
+  `LaRelacionAutoreferenciadaDelArbolEsRestrict` no cambia (filtra por la FK hacia `NodoComercial`).
+* `RepositoriosSqlServerPruebas`: `ObtenerArbolCompletoAsync` → **54** nodos en una SELECT;
+  nueva prueba `ObtenerArbolPorTiendaAsync(1)` → **18** nodos, todos con `TiendaId = 1`, en una SELECT.
+* Pruebas nuevas de datos (sin la capa de aplicacion): `ModeloEfPruebas` verifica la columna `TiendaId` requerida, la FK
+  Restrict a `Tiendas`, el indice filtrado de raices y la semilla de 54 nodos (18 por tienda, Ids 1–18 / 2001–2018 /
+  3001–3018, mismos conceptos y %); `ValidadorArbolComercialPruebas` verifica la regla 5 (padre de otra tienda → error) y
+  que `ValidarArbol` sobre los 54 nodos no reporte errores (hermanos agrupados por tienda); con SQL Server, insertar una
+  raiz repetida en la misma tienda es rechazado por `UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz`, y la misma
+  raiz en otra tienda es aceptada.
+* Las pruebas de API (`ApiPruebas`) y de repositorios de catalogo no cambian; las de API que calculan cargas fallaran hasta
+  que la capa de aplicacion adopte el arbol por tienda (es la ventana descrita arriba): no las desactives.
+
 ---
 
 ## 8. Decisiones de Diseno y Justificacion
@@ -341,7 +441,8 @@ Es un artefacto derivado: se regenera tras cada migracion nueva con
 |---|---|
 | **SQL Server** | `decimal` nativo con precision real, CHECK constraints, indices filtrados. En SQLite EF guarda `decimal` como TEXT e ignora `HasPrecision`. |
 | **Arbol: lista de adyacencia (auto-referencia) + catalogo de conceptos + catalogo de niveles** | Jerarquia dinamica y en 3FN: nuevas categorias/ramas son INSERTs; nuevos niveles (al final o intermedios) no cambian el esquema. Separar concepto de nodo evita repetir nombres ("GIRLS", "MAKEUP", "LABIOS") por cada ruta. Se descarto 7 tablas fijas (rigido ante cambios de niveles). |
-| **Esquemas por bloque (`auth`, `tiendas`, `nodoscomerciales`)** | Agrupa las tablas por modulo (sin tablas sueltas en `dbo`), hace visible que los bloques son independientes (sin FK entre esquemas) y habilita permisos por esquema. |
+| **Esquemas por bloque (`auth`, `tiendas`, `nodoscomerciales`)** | Agrupa las tablas por modulo (sin tablas sueltas en `dbo`), hace visible que los bloques son independientes y habilita permisos por esquema. Unica FK entre esquemas: `NodosComerciales.TiendaId → Tiendas` (ver fila siguiente). |
+| **Arbol comercial por tienda (`NodosComerciales.TiendaId`)** | Cada tienda define sus unidades de negocio y porcentajes (ej. Belleza 30% + Deporte 70%), que el arbol global no permitia. Los conceptos y niveles siguen globales (no se repite el "que es"); solo los nodos ("donde" y "con que %") son de la tienda. La FK entre esquemas es la forma correcta de expresar "el arbol pertenece a una tienda" y la BD garantiza que no haya nodos huerfanos. `TiendaId` va en cada nodo (no solo en la raiz) para leer el arbol de una tienda en una SELECT por indice. |
 | **`Profundidad` separada del `Id` en niveles** | Permite insertar niveles intermedios sin renumerar PKs referenciadas por FK. |
 | **Capacidad fisica como `TiposEspacio` + `EspaciosTienda`** | Elimina el grupo repetido Mueble1/2/3 (1FN) y el texto duplicado de muebles; mobiliario y perimetral se estandarizan en un solo catalogo; Regla 1 = Σ espacios. El tope de 3 muebles es regla de dominio configurable. |
 | **Catalogos para marca, regional, tipo de tienda, responsable visual** | Valores repetidos estandarizados; agrupaciones de reportes sobre claves, sin inconsistencias de texto. |
@@ -356,18 +457,30 @@ Es un artefacto derivado: se regenera tras cada migracion nueva con
 * **Vista indexada (materializada) de niveles 1–6:** SQL Server no admite recursion en vistas indexadas (obligaria a 6 self-joins fijos atados a 7 niveles) y la multiplicacion encadenada de `decimal` en SQL pierde escala.
 * **Vista no materializada de rutas:** no sirve para calcular (precision) y duplicaria logica; la API expone ruta legible y % acumulado calculados en C#.
 * **Mobiliario en columnas fijas:** grupo repetido (viola 1FN) y texto duplicado.
+* **Arbol global + tabla de aplicabilidad por tienda o marca:** permitia elegir ramas por tienda pero no porcentajes
+  distintos por tienda, que es lo que pide el negocio.
+* **`TiendaId` solo en la raiz:** evita repetir la columna, pero obliga a recorrer el arbol hacia arriba para saber de que
+  tienda es un nodo y no permite leer el arbol de una tienda con un filtro por indice.
 
 ---
 
 ## 9. Normalizacion
 * Todas las tablas cumplen **3FN / BCNF**: cada determinante es clave candidata (`Id`, `CodigoHanna`, `Nombre` en catalogos, `(NivelJerarquiaId, Nombre)`, `NombreUsuario`, `Correo`, `Jti`, `HashTokenRefresco`); las tablas puente (`EspaciosTienda` con su cantidad, `UsuariosRoles`) dependen de su clave compuesta completa.
 * Sin grupos repetidos (1FN), sin dependencias parciales (2FN), sin dependencias transitivas (3FN).
+* **Excepcion consciente — `NodosComerciales.TiendaId`:** en un hijo, `TiendaId` se deduce del padre
+  (`Id → NodoPadreId → TiendaId`), asi que repetirlo es una desnormalizacion controlada. Se acepta porque permite leer
+  el arbol de una tienda con un filtro por indice en una SELECT (sin recursion) y validar la pertenencia con FK. La
+  consistencia la garantiza la regla 5 del `ValidadorArbolComercial` (padre e hijo con el mismo `TiendaId`) en cada
+  alta de nodo; la copia de arboles asigna el `TiendaId` destino a todos los nodos.
 * `HashContrasena` se trata como valor atomico (formato PHC opaco). `DireccionIp`/`AgenteUsuario` son hechos de la sesion. `FechaExpiracionUtc` no es derivable (vida del token configurable, fijada al emitir).
 
 ---
 
 ## 10. Supuestos
-* **A. Arbol global:** todas las tiendas usan el mismo arbol y porcentajes. Extension futura sin romper el modelo: `AplicabilidadesMarcaTienda(MarcaTiendaId, NodoComercialId)`.
+* **A. Arbol por tienda:** cada tienda tiene su propio arbol (unidades de negocio, jerarquia y porcentajes). Las 3 tiendas
+  de la semilla tienen el mismo arbol (BELLEZA Y BIENESTAR 100%), por eso la tabla del enunciado para 5503 se conserva.
+  Conceptos y niveles son globales. Las unidades de negocio de una tienda suman ≤ 100% (no se exige 100% exacto).
+  Fuera de alcance de este cambio: eliminar nodos o unidades de negocio.
 * **B. `UnidadesPorEspacio` por tipo de producto** (no por ruta), segun el enunciado. Si dependiera de la ruta, se mueve a `NodoComercial`.
 * **C. Tipo de tienda y responsable visual** no vienen en el enunciado: tipos MIXTA (YAHAD, "formato mixto") / MONOMARCA; responsables visuales en null.
 * **D. Precision** `decimal(18,6)` en porcentajes; Σ % de hermanos ≤ 1 porque la semilla es parcial.
@@ -379,8 +492,10 @@ Es un artefacto derivado: se regenera tras cada migracion nueva con
 ## 11. Criterios de Aceptacion (Definition of Done)
 1. **Compilacion limpia:** `dotnet build` sin warnings de nulabilidad.
 2. **Migracion generada:** `dotnet ef migrations add MigracionInicial -p src/Abastecimiento.Infraestructura -s src/Abastecimiento.Api` crea los 3 esquemas y las 14 tablas (4 en `auth`, 7 en `tiendas`, 3 en `nodoscomerciales`; en `dbo` solo `__EFMigrationsHistory`) con PKs, FKs, indices y CHECKs con los nombres de esta spec.
-3. **Auto-seeding:** contra una BD vacia, al arrancar la API quedan: 3 MarcasTienda, 2 Regionales, 2 TiposTienda, 0 ResponsablesVisuales, 7 TiposEspacio, 3 Tiendas, 10 EspaciosTienda, 7 NivelesJerarquia, 15 ConceptosComerciales, 18 NodosComerciales, 4 Roles, 0 Usuarios/UsuariosRoles/SesionesToken.
+3. **Auto-seeding:** contra una BD vacia, al arrancar la API quedan: 3 MarcasTienda, 2 Regionales, 2 TiposTienda, 0 ResponsablesVisuales, 7 TiposEspacio, 3 Tiendas, 10 EspaciosTienda, 7 NivelesJerarquia, 15 ConceptosComerciales, **54 NodosComerciales (18 por tienda)**, 4 Roles, 0 Usuarios/UsuariosRoles/SesionesToken.
 4. **Espacios totales:** 5503 = 22, 1001 = 30, 2045 = 20.
-5. **Lectura del arbol:** `ObtenerArbolCompletoAsync()` retorna 18 nodos en una unica sentencia `SELECT` (verificable con `LogTo`).
-6. **Integridad:** insertar un % > 1, un `CantidadEspacios` negativo, una `Categoria` invalida o una sesion revocada sin motivo es rechazado por la BD.
-7. **Calculo de referencia:** con la semilla, HANNA 5503 produce exactamente la tabla de la seccion 6 (total 6.6 espacios y 2,966 unidades).
+5. **Lectura del arbol:** `ObtenerArbolPorTiendaAsync(1)` retorna **18** nodos (todos `TiendaId = 1`) y `ObtenerArbolCompletoAsync()` retorna **54**, cada uno en una unica sentencia `SELECT` (verificable con `LogTo`).
+6. **Integridad:** insertar un % > 1, un `CantidadEspacios` negativo, una `Categoria` invalida, una sesion revocada sin motivo, un nodo con `TiendaId` inexistente o una **unidad de negocio repetida en la misma tienda** es rechazado por la BD.
+7. **Calculo de referencia:** con la semilla, el arbol de HANNA 5503 produce exactamente la tabla de la seccion 6 (total 6.6 espacios y 2,966 unidades); 1001 = 4,046 y 2045 = 2,696 con sus propios arboles (verificable con el motor sobre `DatosSemilla.NodosComercialesDeTienda(tiendaId)`).
+8. **Migracion `ArbolPorTienda`** (§7.1): se aplica sin errores sobre una BD que ya tenia `MigracionInicial` (los nodos previos quedan en 5503) y sobre una vacia; `has-pending-model-changes` sin cambios; `database/script_inicial.sql` regenerado.
+9. **Pruebas:** las de §7.2 en verde; las unitarias existentes siguen en verde con `ArbolDePrueba.DesdeSemilla()` (tienda 1).

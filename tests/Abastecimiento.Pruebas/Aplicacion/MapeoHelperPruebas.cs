@@ -37,7 +37,7 @@ public class MapeoHelperPruebas
             nodo.PorcentajeParticipacion = decimal.Parse(nodo.PorcentajeParticipacion.ToString("F6", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
         }
 
-        var resultado = new MotorCalculoCarga(Options.Create(new OpcionesCalculo())).Calcular(tienda.EspaciosTotales, nodos);
+        var resultado = new MotorCalculoCarga(Options.Create(new OpcionesCalculo())).Calcular(tienda.EspaciosTotales, nodos, 7);
         var respuesta = MapeoHelper.ACargaTiendaRespuesta(tienda, resultado);
 
         var labiales = respuesta.Lineas.Single(l => l.TipoProducto == "LABIALES");

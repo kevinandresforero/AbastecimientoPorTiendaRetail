@@ -1,0 +1,59 @@
+@page "/"
+@inherits PaginaBase
+
+<PageTitle>Inicio · Abastecimiento</PageTitle>
+
+<section class="hero" aria-labelledby="titulo-inicio">
+    <div class="hero-texto">
+        <p class="hero-antetitulo">Lili Pink · Yoi · Yahad</p>
+        <h1 id="titulo-inicio">Carga de abastecimiento por tienda</h1>
+        <p>Los espacios de cada tienda se reparten en cascada por el árbol comercial de 7 niveles hasta las unidades
+            de cada tipo de producto.</p>
+    </div>
+    <div class="hero-busqueda">
+        <EditForm Model="busqueda" OnValidSubmit="Buscar">
+            <DataAnnotationsValidator />
+            <label class="form-label" for="busqueda-hanna">Calcular carga por código HANNA</label>
+            <div class="input-group">
+                <InputNumber id="busqueda-hanna" class="form-control" @bind-Value="busqueda.CodigoHanna" placeholder="Ej. 5503" />
+                <button type="submit" class="btn btn-primary"><Icono Nombre="buscar" /> Calcular</button>
+            </div>
+            <ValidationMessage For="() => busqueda.CodigoHanna" />
+            <p class="form-text mb-0 mt-2">Muestra el desglose por tipo de producto y la carga total en unidades.</p>
+        </EditForm>
+    </div>
+</section>
+
+@if (cargando)
+{
+    <Cargando Texto="Cargando cifras…" />
+}
+else if (error is not null)
+{
+    <MensajeError Error="error" AlReintentar="CargarCifrasAsync" />
+}
+else if (total is not null)
+{
+    <section class="cifras" aria-label="Cifras generales">
+        <TarjetaCifra Etiqueta="Tiendas" Valor="@Formato.Entero(total.CantidadTiendas)" NombreIcono="tiendas" />
+        <TarjetaCifra Etiqueta="Espacios totales" Valor="@(total.EspaciosTotales is int e ? Formato.Entero(e) : "—")" NombreIcono="espacios" />
+        <TarjetaCifra Etiqueta="Espacios asignados" Valor="@Formato.Decimal4(total.EspaciosAsignados)"
+                      Tooltip="@Formato.Completo(total.EspaciosAsignados)" NombreIcono="capas" />
+        <TarjetaCifra Etiqueta="Carga total" Valor="@Formato.Entero(total.CargaTotal)" Detalle="unidades" NombreIcono="carga" Destacada="true" />
+    </section>
+}
+
+<h2 class="h5 mb-3">Secciones</h2>
+<div class="row g-3">
+    @foreach (var seccion in Secciones)
+    {
+        <div class="col-sm-6 col-xl">
+            <a class="tarjeta-seccion" href="@seccion.Ruta">
+                <span class="tarjeta-cifra-icono"><Icono Nombre="@seccion.Icono" /></span>
+                <h2>@seccion.Titulo</h2>
+                <p>@seccion.Descripcion</p>
+                <span class="tarjeta-seccion-ir">Abrir <Icono Nombre="flecha" /></span>
+            </a>
+        </div>
+    }
+</div>

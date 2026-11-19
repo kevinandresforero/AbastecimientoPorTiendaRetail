@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Abastecimiento.Dominio.Reglas;
 using Abastecimiento.Aplicacion.Dtos.Catalogos;
 using Abastecimiento.Dominio.Entidades.Tiendas;
 
@@ -12,7 +13,7 @@ public sealed record CrearTiendaSolicitud
     public int CodigoHanna { get; init; }
 
     [Required]
-    [StringLength(150)]
+    [StringLength(LongitudesCampo.NombreTienda)]
     public string Nombre { get; init; } = string.Empty;
 
     [Range(1, int.MaxValue)]
@@ -65,7 +66,7 @@ public sealed record TipoEspacioRespuesta(int Id, string Nombre, CategoriaEspaci
 public sealed record CrearTipoEspacioSolicitud
 {
     [Required]
-    [StringLength(50)]
+    [StringLength(LongitudesCampo.NombreTipoEspacio)]
     public string Nombre { get; init; } = string.Empty;
 
     /// <summary><c>mobiliario</c> (cuenta para el tope de 3 por tienda) o <c>perimetral</c>.</summary>

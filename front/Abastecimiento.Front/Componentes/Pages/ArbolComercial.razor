@@ -1,0 +1,216 @@
+@page "/arbol"
+@inherits PaginaBase
+
+<PageTitle>Árbol comercial · Abastecimiento</PageTitle>
+
+<EncabezadoPagina Titulo="Árbol comercial" Migas="Migas"
+                  Descripcion="Cada nodo reparte los espacios de su padre según su % de participación; el nivel hoja define las unidades por espacio.">
+    <Acciones>
+        <button type="button" class="btn btn-secondary" disabled="@(niveles.Count == 0)" @onclick="AbrirNuevoConcepto">
+            <Icono Nombre="mas" /> Nuevo concepto
+        </button>
+        @if (PuedeCopiar)
+        {
+            <button type="button" class="btn btn-outline-primary" @onclick="AbrirCopiarArbol">
+                <Icono Nombre="capas" /> Copiar árbol
+            </button>
+        }
+        <button type="button" class="btn btn-primary" disabled="@(niveles.Count == 0 || codigoSeleccionado is null)" @onclick="() => AbrirNuevoNodo(null)">
+            <Icono Nombre="mas" /> Agregar nodo raíz
+        </button>
+    </Acciones>
+</EncabezadoPagina>
+
+@if (aviso is not null)
+{
+    <div class="alert alert-success" role="status">@aviso</div>
+}
+
+<MensajeError Error="error" AlReintentar="CargarAsync" />
+
+@if (cargando)
+{
+    <Cargando Texto="Cargando árbol…" />
+}
+else if (error is null)
+{
+    <section class="panel" aria-labelledby="titulo-niveles">
+        <div class="panel-cabecera">
+            <h2 class="panel-titulo" id="titulo-niveles"><Icono Nombre="capas" /> Niveles de la jerarquía</h2>
+        </div>
+        <div class="panel-cuerpo py-3">
+            <ol class="lista-niveles horizontal">
+                @foreach (var nivel in niveles)
+                {
+                    <li class="@(nivel.EsHoja ? "es-hoja" : null)">
+                        <span class="nivel-numero" aria-hidden="true">@nivel.Profundidad</span>
+                        <span>@nivel.Nombre</span>
+                        @if (nivel.EsHoja)
+                        {
+                            <span class="chip chip-acento">Hoja</span>
+                        }
+                    </li>
+                }
+            </ol>
+        </div>
+    </section>
+
+    <div>
+        <div>
+            <section class="panel" aria-labelledby="titulo-arbol">
+                <div class="panel-cabecera">
+                    <h2 class="panel-titulo" id="titulo-arbol"><Icono Nombre="arbol" /> Estructura</h2>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        @if (tiendas.Count > 0)
+                        {
+                            <label class="form-label mb-0" for="tienda-arbol">Tienda</label>
+                            <select id="tienda-arbol" class="form-select form-select-sm w-auto" @bind="codigoSeleccionado"
+                                    @bind:after="CambiarTiendaAsync" disabled="@cargando">
+                                @foreach (var tienda in tiendas)
+                                {
+                                    <option value="@tienda.CodigoHanna">@tienda.CodigoHanna · @tienda.Nombre</option>
+                                }
+                            </select>
+                        }
+                        <span class="chip">@Formato.Entero(arbol.Count) nodos</span>
+                        <div class="selector-vista" role="group" aria-label="Forma de ver el árbol">
+                            <button type="button" id="vista-arbol" class="@(vistaTabla ? null : "activa")" aria-pressed="@(vistaTabla ? "false" : "true")"
+                                    @onclick="() => CambiarVista(false)"><Icono Nombre="arbol" /> Árbol</button>
+                            <button type="button" id="vista-tabla" class="@(vistaTabla ? "activa" : null)" aria-pressed="@(vistaTabla ? "true" : "false")"
+                                    @onclick="() => CambiarVista(true)"><Icono Nombre="catalogos" /> Tabla</button>
+                        </div>
+                    </div>
+                </div>
+                @if (tiendas.Count == 0)
+                {
+                    <p class="estado-vacio" role="status">
+                        No hay tiendas registradas. <a href="tiendas/nueva">Cree una tienda</a> para parametrizar su árbol.
+                    </p>
+                }
+                else if (arbol.Count == 0)
+                {
+                    <p class="estado-vacio" role="status">
+                        La tienda @codigoSeleccionado (@TiendaSeleccionada?.Nombre) no tiene árbol. Agregue un nodo raíz@(tiendas.Count > 1 ? " o copie el árbol de otra tienda" : "").
+                    </p>
+                }
+                else if (vistaTabla)
+                {
+                    <div class="panel-cuerpo pb-3">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-6">
+                                <label class="form-label" for="nodos-busqueda">Buscar</label>
+                                <input id="nodos-busqueda" type="search" class="form-control" autocomplete="off" placeholder="Nombre o ruta (ej. labios)"
+                                       @bind="filtroNodos.Texto" @bind:event="oninput" />
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="nodos-nivel">Nivel</label>
+                                <select id="nodos-nivel" class="form-select" @bind="filtroNodos.Nivel">
+                                    <option value="">Todos</option>
+                                    @foreach (var nivel in niveles)
+                                    {
+                                        <option value="@nivel.Nombre">@nivel.Profundidad. @nivel.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="form-check mb-2">
+                                    <input id="nodos-hojas" type="checkbox" class="form-check-input" @bind="filtroNodos.SoloHojas" />
+                                    <label class="form-check-label" for="nodos-hojas">Solo nivel hoja</label>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="form-text mb-0 mt-2" aria-live="polite">@Formato.Entero(NodosFiltrados.Count) de @Formato.Entero(arbol.Count) nodos.</p>
+                    </div>
+                    @if (NodosFiltrados.Count == 0)
+                    {
+                        <p class="estado-vacio" role="status">Ningún nodo cumple los filtros.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <QuickGrid Items="NodosConsulta" Class="table table-striped table-hover align-middle tabla-nodos">
+                                <TemplateColumn Title="Concepto" Context="nodo" SortBy="NodoPorNombre" Sortable="true">
+                                    <span class="d-block fw-bold">@nodo.Nombre</span>
+                                    <span class="d-block porcentaje-ruta texto-secundario">@nodo.Ruta</span>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Nivel" Context="nodo" SortBy="NodoPorProfundidad" Sortable="true">
+                                    <span class="chip @(nodo.EsHoja ? "chip-acento" : null)">@nodo.Profundidad. @nodo.Nivel</span>
+                                </TemplateColumn>
+                                <TemplateColumn Title="% participación" Align="Align.End" Context="nodo" SortBy="NodoPorParticipacion" Sortable="true">
+                                    <span title="@Formato.PorcentajeCompleto(nodo.PorcentajeParticipacion)">@Formato.Porcentaje(nodo.PorcentajeParticipacion)</span>
+                                </TemplateColumn>
+                                <TemplateColumn Title="% acumulado" Align="Align.End" Context="nodo" SortBy="NodoPorAcumulado" Sortable="true">
+                                    <span title="@Formato.PorcentajeCompleto(nodo.PorcentajeAcumulado)">@Formato.Porcentaje(nodo.PorcentajeAcumulado)</span>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Unid. / espacio" Align="Align.End" Context="nodo">@(nodo.UnidadesPorEspacio is int u ? Formato.Entero(u) : "—")</TemplateColumn>
+                                <TemplateColumn Title="Acciones" Align="Align.End" Context="nodo">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="() => AbrirEditarPorcentaje(nodo)">
+                                        <Icono Nombre="editar" /> Editar %<span class="visually-hidden"> de @nodo.Nombre</span>
+                                    </button>
+                                </TemplateColumn>
+                            </QuickGrid>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <ArbolNodos TNodo="NodoArbolRespuesta" Nodos="arbol" Titulo="Árbol comercial" IdSeleccionado="idSeleccionado"
+                                ObtenerId="n => n.NodoId" ObtenerPadreId="n => n.NodoPadreId" ObtenerNombre="n => n.Nombre"
+                                ObtenerProfundidad="n => n.Profundidad" ObtenerDetalle="n => n.Nivel">
+                        <Encabezados>
+                            <th scope="col" class="text-end">% participación</th>
+                            <th scope="col" class="text-end">% acumulado</th>
+                            <th scope="col" class="text-end">Unidades por espacio</th>
+                            <th scope="col" class="text-end">Acciones</th>
+                        </Encabezados>
+                        <Columnas Context="nodo">
+                            <td class="text-end">
+                                <div class="porcentaje" title="@Formato.PorcentajeCompleto(nodo.PorcentajeParticipacion)">
+                                    <span class="barra-porcentaje" aria-hidden="true"><span style="width: @AnchoBarra(nodo.PorcentajeParticipacion)"></span></span>
+                                    <span>@Formato.Porcentaje(nodo.PorcentajeParticipacion)</span>
+                                </div>
+                            </td>
+                            <td class="text-end texto-secundario" title="@Formato.PorcentajeCompleto(nodo.PorcentajeAcumulado)">@Formato.Porcentaje(nodo.PorcentajeAcumulado)</td>
+                            <td class="text-end">@(nodo.UnidadesPorEspacio is int unidades ? Formato.Entero(unidades) : "—")</td>
+                            <td class="text-end">
+                                <div class="acciones-nodo">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="() => AbrirEditarPorcentaje(nodo)">
+                                        <Icono Nombre="editar" /> Editar %<span class="visually-hidden"> de @nodo.Nombre</span>
+                                    </button>
+                                    @if (!nodo.EsHoja)
+                                    {
+                                        <button type="button" class="btn btn-outline-primary btn-sm" @onclick="() => AbrirNuevoNodo(nodo)">
+                                            <Icono Nombre="mas" /> Hijo<span class="visually-hidden"> de @nodo.Nombre</span>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </Columnas>
+                    </ArbolNodos>
+                }
+            </section>
+        </div>
+    </div>
+}
+
+@if (nodoEditando is not null)
+{
+    <DialogoEditarPorcentaje Nodo="nodoEditando" SumaHermanos="SumaHermanos(nodoEditando.NodoPadreId, nodoEditando.NodoId)"
+                             AlGuardar="PorcentajeGuardadoAsync" AlCancelar="CerrarDialogos" />
+}
+
+@if (mostrarNuevoNodo && codigoSeleccionado is int codigoNodo)
+{
+    <DialogoNuevoNodo CodigoHanna="codigoNodo" Padre="padreNuevoNodo" Niveles="niveles" SumaHermanos="SumaHermanos(padreNuevoNodo?.NodoId, null)"
+                      AlGuardar="NodoCreadoAsync" AlCancelar="CerrarDialogos" />
+}
+
+@if (mostrarCopiarArbol && codigoSeleccionado is int codigoDestino)
+{
+    <DialogoCopiarArbol CodigoHannaDestino="codigoDestino" Tiendas="tiendas" AlCopiar="ArbolCopiadoAsync" AlCancelar="CerrarDialogos" />
+}
+
+@if (mostrarNuevoConcepto)
+{
+    <DialogoNuevoConcepto Niveles="niveles" AlGuardar="ConceptoCreado" AlCancelar="CerrarDialogos" />
+}

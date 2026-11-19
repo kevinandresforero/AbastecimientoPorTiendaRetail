@@ -1,0 +1,43 @@
+<header class="encabezado-pagina">
+    @if (Migas.Count > 0)
+    {
+        <nav aria-label="Ruta de navegación">
+            <ol class="migas">
+                @foreach (var miga in Migas)
+                {
+                    <li>
+                        @if (miga.Ruta is not null)
+                        {
+                            <a href="@miga.Ruta">@miga.Texto</a>
+                        }
+                        else
+                        {
+                            <span aria-current="page">@miga.Texto</span>
+                        }
+                    </li>
+                }
+            </ol>
+        </nav>
+    }
+    <div class="encabezado-fila">
+        <div>
+            @if (!string.IsNullOrWhiteSpace(Antetitulo))
+            {
+                <p class="encabezado-antetitulo">@Antetitulo</p>
+            }
+            <h1>@Titulo</h1>
+            @if (!string.IsNullOrWhiteSpace(Descripcion))
+            {
+                <p class="encabezado-descripcion">@Descripcion</p>
+            }
+            @if (ChildContent is not null)
+            {
+                <div class="encabezado-extra">@ChildContent</div>
+            }
+        </div>
+        @if (Acciones is not null)
+        {
+            <div class="encabezado-acciones">@Acciones</div>
+        }
+    </div>
+</header>

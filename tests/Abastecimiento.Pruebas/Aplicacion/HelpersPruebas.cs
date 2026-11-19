@@ -10,7 +10,7 @@ public class HelpersPruebas
     public void PorcentajeAcumuladoDeLabialesEs0_0564()
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
-        var arbol = ArbolComercialHelper.Indexar(nodos);
+        var arbol = ArbolComercialHelper.Indexar(nodos, 7);
 
         var labiales = ArbolComercialHelper.RecorrerEnCascada(arbol, 1m).Single(r => r.Nodo.Id == 10);
 
@@ -22,7 +22,7 @@ public class HelpersPruebas
     public void RutaLegibleUneLosNombresDesdeLaRaiz()
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
-        var arbol = ArbolComercialHelper.Indexar(nodos);
+        var arbol = ArbolComercialHelper.Indexar(nodos, 7);
 
         var labiales = ArbolComercialHelper.RecorrerEnCascada(arbol, 1m).Single(r => r.Nodo.Id == 10);
 
@@ -35,7 +35,7 @@ public class HelpersPruebas
     public void ElRecorridoEsEnPreorden()
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
-        var arbol = ArbolComercialHelper.Indexar(nodos);
+        var arbol = ArbolComercialHelper.Indexar(nodos, 7);
 
         var orden = ArbolComercialHelper.RecorrerEnCascada(arbol, 1m).Select(r => r.Nodo.Id).ToArray();
 
@@ -43,11 +43,11 @@ public class HelpersPruebas
     }
 
     [Fact]
-    public void IndexarDerivaLaProfundidadHojaDeLosDatos()
+    public void IndexarUsaLaProfundidadHojaDeLosNiveles()
     {
         var (nodos, _) = ArbolDePrueba.DesdeSemilla();
 
-        var arbol = ArbolComercialHelper.Indexar(nodos);
+        var arbol = ArbolComercialHelper.Indexar(nodos, 7);
 
         Assert.Equal(7, arbol.ProfundidadHoja);
         Assert.Equal(1, Assert.Single(arbol.Raices).Id);

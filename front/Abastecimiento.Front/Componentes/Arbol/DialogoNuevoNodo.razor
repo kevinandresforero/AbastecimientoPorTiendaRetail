@@ -1,0 +1,51 @@
+@inherits PaginaBase
+
+<Dialogo Titulo="@Titulo">
+    @if (nivelHijo is null)
+    {
+        <div class="alert alert-info" role="status">Información: el nodo pertenece al último nivel del árbol y no admite hijos.</div>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-outline-primary" @onclick="CancelarAsync">Cerrar</button>
+        </div>
+    }
+    else if (cargando)
+    {
+        <Cargando Texto="Cargando conceptos…" />
+    }
+    else
+    {
+        <MensajeError Error="errorCarga" AlReintentar="CargarConceptosAsync" />
+        <EditForm Model="formulario" OnValidSubmit="GuardarAsync">
+            <DataAnnotationsValidator />
+            <ResumenErroresApi Error="errorEnvio" AliasCampos="AliasCampos" />
+            <ValidationSummary class="alert alert-danger resumen-validacion" />
+
+            <p class="mb-3">
+                Nivel del nuevo nodo: <strong>@nivelHijo.Nombre</strong>
+                <span class="texto-secundario">@(Padre is null ? "(raíz del árbol)" : $"bajo {Padre.Ruta}")</span>
+            </p>
+
+            <div class="mb-3">
+                <SelectorCatalogo Id="nodo-concepto" Etiqueta="Concepto" Opciones="opcionesConcepto" @bind-Value="formulario.ConceptoComercialId" />
+                @if (opcionesConcepto.Count == 0 && errorCarga is null)
+                {
+                    <p class="form-text">No hay conceptos del nivel @nivelHijo.Nombre. Créelo con "Nuevo concepto".</p>
+                }
+            </div>
+
+            <label class="form-label" for="nodo-porcentaje">Porcentaje de participación (%)</label>
+            <div class="input-group">
+                <InputText id="nodo-porcentaje" class="form-control" inputmode="decimal" placeholder="Ej. 30 o 30,5"
+                           @bind-Value="formulario.Porcentaje" />
+                <span class="input-group-text">%</span>
+            </div>
+            <ValidationMessage For="() => formulario.Porcentaje" />
+            <AyudaPorcentaje SumaHermanos="SumaHermanos" />
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline-primary" @onclick="CancelarAsync">Cancelar</button>
+                <button type="submit" class="btn btn-primary" disabled="@enviando">@(enviando ? "Guardando…" : "Agregar nodo")</button>
+            </div>
+        </EditForm>
+    }
+</Dialogo>

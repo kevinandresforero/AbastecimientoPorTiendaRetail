@@ -1,0 +1,51 @@
+<div class="table-responsive">
+    <table class="table table-striped align-middle tabla-carga caption-top">
+        <caption>Carga de la tienda @Carga.CodigoHanna — @Carga.NombreTienda (@Formato.Entero(Carga.EspaciosTotales) espacios totales)</caption>
+        <thead>
+            <tr>
+                <th scope="col">Marca de producto</th>
+                <th scope="col">Perfil (% part.)</th>
+                <th scope="col">Tipo de producto (% part.)</th>
+                <th scope="col" class="text-end">Espacios calculados</th>
+                <th scope="col" class="text-end">Unidades por espacio</th>
+                <th scope="col" class="text-end">Carga calculada</th>
+                <th scope="col" class="text-end">Carga total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var fila in Filas)
+            {
+                <tr @key="fila.Linea.NodoId">
+                    <td class="celda-marca">@NombreDe(fila.Marca)</td>
+                    <td class="celda-perfil">
+                        <span class="d-block">@NombreDe(fila.Perfil)</span>
+                        @if (fila.Perfil is not null)
+                        {
+                            <span class="d-block porcentaje-ruta texto-secundario" title="@Formato.PorcentajeCompleto(fila.Perfil.PorcentajeParticipacion)">(@Formato.Porcentaje(fila.Perfil.PorcentajeParticipacion))</span>
+                        }
+                    </td>
+                    <td class="celda-tipo">
+                        <span class="d-block">@fila.Linea.TipoProducto</span>
+                        @if (fila.TipoProducto is not null)
+                        {
+                            <span class="d-block porcentaje-ruta texto-secundario" title="@Formato.PorcentajeCompleto(fila.TipoProducto.PorcentajeParticipacion)">(@Formato.Porcentaje(fila.TipoProducto.PorcentajeParticipacion))</span>
+                        }
+                    </td>
+                    <td class="text-end celda-espacios" title="@Formato.Completo(fila.Linea.EspaciosCalculados)">@Formato.Decimal4(fila.Linea.EspaciosCalculados)</td>
+                    <td class="text-end">@Formato.Entero(fila.Linea.UnidadesPorEspacio)</td>
+                    <td class="text-end" title="@Formato.Completo(fila.Linea.CargaCalculada)">@Formato.Decimal4(fila.Linea.CargaCalculada)</td>
+                    <td class="text-end fw-bold celda-carga">@Formato.Entero(fila.Linea.CargaTotal)</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="fila-total">
+                <th scope="row" colspan="3">Total</th>
+                <td class="text-end fw-bold total-espacios" title="@Formato.Completo(Carga.TotalEspaciosAsignados)">@Formato.Decimal4(Carga.TotalEspaciosAsignados)</td>
+                <td></td>
+                <td></td>
+                <td class="text-end fw-bold total-carga">@Formato.Entero(Carga.TotalCarga)</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
