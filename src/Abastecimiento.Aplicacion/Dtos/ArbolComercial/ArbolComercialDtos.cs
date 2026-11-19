@@ -34,6 +34,12 @@ public sealed record NodoArbolRespuesta(
     int? UnidadesPorEspacio,
     bool EsHoja);
 
+/// <summary>Resultado de copiar el arbol comercial de una tienda a otra.</summary>
+/// <param name="CodigoHannaOrigen">Tienda de la que se copio.</param>
+/// <param name="CodigoHannaDestino">Tienda que recibio la copia.</param>
+/// <param name="NodosCopiados">Cantidad de nodos clonados.</param>
+public sealed record CopiaArbolRespuesta(int CodigoHannaOrigen, int CodigoHannaDestino, int NodosCopiados);
+
 /// <summary>Datos para crear un concepto comercial.</summary>
 public sealed record CrearConceptoSolicitud
 {

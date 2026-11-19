@@ -11,7 +11,7 @@ public static class ValidadorArbolComercial
 {
     /// <summary>Profundidad del nivel hoja: la mayor profundidad definida (derivada, no se persiste).</summary>
     public static int ObtenerProfundidadHoja(IEnumerable<NivelJerarquia> niveles) =>
-        niveles.Max(n => n.Profundidad);
+        niveles.Select(n => n.Profundidad).DefaultIfEmpty(0).Max();
 
     /// <summary>Regla 2: nivel hoja exige UnidadesPorEspacio (> 0); otros niveles no lo admiten.</summary>
     public static void ValidarConcepto(ConceptoComercial concepto, NivelJerarquia nivel, int profundidadHoja)

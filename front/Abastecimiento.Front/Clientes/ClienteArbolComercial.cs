@@ -10,8 +10,8 @@ public sealed class ClienteArbolComercial(HttpClient http) : ClienteApiBase(http
         GetAsync<IReadOnlyList<NivelRespuesta>>("api/niveles-jerarquia", ct);
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<NodoArbolRespuesta>> ObtenerArbolAsync(CancellationToken ct) =>
-        GetAsync<IReadOnlyList<NodoArbolRespuesta>>("api/arbol-comercial", ct);
+    public Task<IReadOnlyList<NodoArbolRespuesta>> ObtenerArbolAsync(int codigoHanna, CancellationToken ct) =>
+        GetAsync<IReadOnlyList<NodoArbolRespuesta>>($"api/tiendas/{codigoHanna}/arbol-comercial", ct);
 
     /// <inheritdoc />
     public Task<IReadOnlyList<ConceptoRespuesta>> ListarConceptosAsync(int? nivelJerarquiaId, CancellationToken ct) =>
@@ -24,8 +24,13 @@ public sealed class ClienteArbolComercial(HttpClient http) : ClienteApiBase(http
         PostAsync<CrearConceptoSolicitud, ConceptoRespuesta>("api/conceptos-comerciales", solicitud, ct);
 
     /// <inheritdoc />
-    public Task<NodoArbolRespuesta> CrearNodoAsync(CrearNodoSolicitud solicitud, CancellationToken ct) =>
-        PostAsync<CrearNodoSolicitud, NodoArbolRespuesta>("api/nodos-comerciales", solicitud, ct);
+    public Task<NodoArbolRespuesta> CrearNodoAsync(int codigoHanna, CrearNodoSolicitud solicitud, CancellationToken ct) =>
+        PostAsync<CrearNodoSolicitud, NodoArbolRespuesta>($"api/tiendas/{codigoHanna}/nodos-comerciales", solicitud, ct);
+
+    /// <inheritdoc />
+    public Task<CopiaArbolRespuesta> CopiarArbolAsync(int codigoHannaDestino, int codigoHannaOrigen, CancellationToken ct) =>
+        PostAsync<CopiaArbolRespuesta>(
+            $"api/tiendas/{codigoHannaDestino}/arbol-comercial/copiar-desde/{codigoHannaOrigen}", ct);
 
     /// <inheritdoc />
     public Task<NodoArbolRespuesta> ActualizarPorcentajeAsync(int nodoId, decimal porcentajeParticipacion, CancellationToken ct) =>

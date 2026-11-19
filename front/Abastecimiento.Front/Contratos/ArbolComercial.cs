@@ -20,10 +20,13 @@ public sealed record NodoArbolRespuesta(
     int? UnidadesPorEspacio,
     bool EsHoja);
 
+/// <summary>Resultado de copiar el arbol comercial de una tienda a otra.</summary>
+public sealed record CopiaArbolRespuesta(int CodigoHannaOrigen, int CodigoHannaDestino, int NodosCopiados);
+
 /// <summary>Cuerpo de <c>POST /api/conceptos-comerciales</c>.</summary>
 public sealed record CrearConceptoSolicitud(int NivelJerarquiaId, string Nombre, int? UnidadesPorEspacio);
 
-/// <summary>Cuerpo de <c>POST /api/nodos-comerciales</c>; el porcentaje va como fraccion (0.3 = 30%).</summary>
+/// <summary>Cuerpo de <c>POST /api/tiendas/{codigoHanna}/nodos-comerciales</c>; el porcentaje va como fraccion (0.3 = 30%).</summary>
 public sealed record CrearNodoSolicitud(int? NodoPadreId, int ConceptoComercialId, decimal PorcentajeParticipacion);
 
 /// <summary>Cuerpo de <c>PUT /api/nodos-comerciales/{id}/porcentaje</c> (fraccion).</summary>

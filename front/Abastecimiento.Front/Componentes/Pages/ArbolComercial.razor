@@ -9,7 +9,13 @@
         <button type="button" class="btn btn-secondary" disabled="@(niveles.Count == 0)" @onclick="AbrirNuevoConcepto">
             <Icono Nombre="mas" /> Nuevo concepto
         </button>
-        <button type="button" class="btn btn-primary" disabled="@(niveles.Count == 0)" @onclick="() => AbrirNuevoNodo(null)">
+        @if (PuedeCopiar)
+        {
+            <button type="button" class="btn btn-outline-primary" @onclick="AbrirCopiarArbol">
+                <Icono Nombre="capas" /> Copiar árbol
+            </button>
+        }
+        <button type="button" class="btn btn-primary" disabled="@(niveles.Count == 0 || codigoSeleccionado is null)" @onclick="() => AbrirNuevoNodo(null)">
             <Icono Nombre="mas" /> Agregar nodo raíz
         </button>
     </Acciones>
@@ -55,6 +61,17 @@ else if (error is null)
                 <div class="panel-cabecera">
                     <h2 class="panel-titulo" id="titulo-arbol"><Icono Nombre="arbol" /> Estructura</h2>
                     <div class="d-flex flex-wrap align-items-center gap-2">
+                        @if (tiendas.Count > 0)
+                        {
+                            <label class="form-label mb-0" for="tienda-arbol">Tienda</label>
+                            <select id="tienda-arbol" class="form-select form-select-sm w-auto" @bind="codigoSeleccionado"
+                                    @bind:after="CambiarTiendaAsync" disabled="@cargando">
+                                @foreach (var tienda in tiendas)
+                                {
+                                    <option value="@tienda.CodigoHanna">@tienda.CodigoHanna · @tienda.Nombre</option>
+                                }
+                            </select>
+                        }
                         <span class="chip">@Formato.Entero(arbol.Count) nodos</span>
                         <div class="selector-vista" role="group" aria-label="Forma de ver el árbol">
                             <button type="button" id="vista-arbol" class="@(vistaTabla ? null : "activa")" aria-pressed="@(vistaTabla ? "false" : "true")"
@@ -64,9 +81,17 @@ else if (error is null)
                         </div>
                     </div>
                 </div>
-                @if (arbol.Count == 0)
+                @if (tiendas.Count == 0)
                 {
-                    <p class="estado-vacio" role="status">El árbol está vacío. Agregue un nodo raíz.</p>
+                    <p class="estado-vacio" role="status">
+                        No hay tiendas registradas. <a href="tiendas/nueva">Cree una tienda</a> para parametrizar su árbol.
+                    </p>
+                }
+                else if (arbol.Count == 0)
+                {
+                    <p class="estado-vacio" role="status">
+                        La tienda @codigoSeleccionado (@TiendaSeleccionada?.Nombre) no tiene árbol. Agregue un nodo raíz@(tiendas.Count > 1 ? " o copie el árbol de otra tienda" : "").
+                    </p>
                 }
                 else if (vistaTabla)
                 {
@@ -174,10 +199,15 @@ else if (error is null)
                              AlGuardar="PorcentajeGuardadoAsync" AlCancelar="CerrarDialogos" />
 }
 
-@if (mostrarNuevoNodo)
+@if (mostrarNuevoNodo && codigoSeleccionado is int codigoNodo)
 {
-    <DialogoNuevoNodo Padre="padreNuevoNodo" Niveles="niveles" SumaHermanos="SumaHermanos(padreNuevoNodo?.NodoId, null)"
+    <DialogoNuevoNodo CodigoHanna="codigoNodo" Padre="padreNuevoNodo" Niveles="niveles" SumaHermanos="SumaHermanos(padreNuevoNodo?.NodoId, null)"
                       AlGuardar="NodoCreadoAsync" AlCancelar="CerrarDialogos" />
+}
+
+@if (mostrarCopiarArbol && codigoSeleccionado is int codigoDestino)
+{
+    <DialogoCopiarArbol CodigoHannaDestino="codigoDestino" Tiendas="tiendas" AlCopiar="ArbolCopiadoAsync" AlCancelar="CerrarDialogos" />
 }
 
 @if (mostrarNuevoConcepto)

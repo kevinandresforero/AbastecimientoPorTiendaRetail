@@ -14,6 +14,10 @@ public abstract class ClienteApiBase(HttpClient http)
         LectorRespuestas.EnviarAsync<TRespuesta>(
             token => http.PostAsJsonAsync(ruta, cuerpo, LectorRespuestas.OpcionesJson, token), ct);
 
+    /// <summary>POST sin cuerpo y deserializa la respuesta (acciones como copiar el arbol).</summary>
+    protected Task<TRespuesta> PostAsync<TRespuesta>(string ruta, CancellationToken ct) =>
+        LectorRespuestas.EnviarAsync<TRespuesta>(token => http.PostAsync(ruta, null, token), ct);
+
     /// <summary>PUT con cuerpo JSON y deserializa la respuesta.</summary>
     protected Task<TRespuesta> PutAsync<TSolicitud, TRespuesta>(string ruta, TSolicitud cuerpo, CancellationToken ct) =>
         LectorRespuestas.EnviarAsync<TRespuesta>(

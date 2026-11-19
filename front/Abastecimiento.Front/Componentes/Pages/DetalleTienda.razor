@@ -29,9 +29,17 @@ else if (tienda is not null)
     }
 
     <EncabezadoPagina Titulo="@tienda.Nombre" Antetitulo="@($"HANNA {tienda.CodigoHanna}")" Migas="Migas">
-        <span class="chip">Marca: @tienda.MarcaTienda.Nombre</span>
-        <span class="chip chip-neutro">Regional: @tienda.Regional.Nombre</span>
-        <span class="chip chip-neutro">Tipo: @tienda.TipoTienda.Nombre</span>    </EncabezadoPagina>
+        <Acciones>
+            <a class="btn btn-outline-primary" href="@($"arbol?tienda={tienda.CodigoHanna}")">
+                <Icono Nombre="arbol" /> Ver árbol comercial
+            </a>
+        </Acciones>
+        <ChildContent>
+            <span class="chip">Marca: @tienda.MarcaTienda.Nombre</span>
+            <span class="chip chip-neutro">Regional: @tienda.Regional.Nombre</span>
+            <span class="chip chip-neutro">Tipo: @tienda.TipoTienda.Nombre</span>
+        </ChildContent>
+    </EncabezadoPagina>
 
     <section class="cifras" aria-label="Cifras de la tienda">
         <TarjetaCifra Etiqueta="Espacios totales" Valor="@Formato.Entero(tienda.EspaciosTotales)" Detalle="Mobiliario y perimetrales" NombreIcono="espacios" />

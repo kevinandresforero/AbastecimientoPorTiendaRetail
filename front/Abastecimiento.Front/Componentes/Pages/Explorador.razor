@@ -131,14 +131,100 @@ else if (error is null)
     <section class="panel" aria-labelledby="titulo-resultados">
         <div class="panel-cabecera">
             <h2 class="panel-titulo" id="titulo-resultados"><Icono Nombre="reportes" /> Resultados</h2>
-            <span class="texto-secundario small">Haga clic en un encabezado para ordenar.</span>
+            <div class="selector-vista" role="group" aria-label="Forma de ver los resultados">
+                <button type="button" id="vista-filas" class="@(vistaPorProducto ? null : "activa")" aria-pressed="@(vistaPorProducto ? "false" : "true")"
+                        @onclick="() => CambiarVista(false)"><Icono Nombre="catalogos" /> Filas</button>
+                <button type="button" id="vista-producto" class="@(vistaPorProducto ? "activa" : null)" aria-pressed="@(vistaPorProducto ? "true" : "false")"
+                        @onclick="() => CambiarVista(true)"><Icono Nombre="producto" /> Por producto</button>
+            </div>
         </div>
         @if (filtradas.Count == 0)
         {
             <p class="estado-vacio" role="status">Ninguna fila cumple los filtros. Pruebe con otra búsqueda o limpie los filtros.</p>
         }
+        else if (vistaPorProducto)
+        {
+            <div class="panel-cuerpo pb-2">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <p class="form-text m-0" aria-live="polite">
+                        @Formato.Entero(grupos.Count) @(grupos.Count == 1 ? "producto" : "productos"), de mayor a menor carga.
+                        Abra un producto para ver a qué tiendas va y cuánto.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ExpandirTodos">Expandir todo</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ContraerTodos">Contraer todo</button>
+                    </div>
+                </div>
+            </div>
+            <ul class="lista-productos">
+                @foreach (var grupo in grupos)
+                {
+                    var abierto = EstaAbierto(grupo);
+                    var idDetalle = $"producto-{IdGrupo(grupo)}";
+                    <li class="grupo-producto @(abierto ? "abierto" : null)" @key="grupo.Clave">
+                        <button type="button" class="grupo-producto-cabecera" aria-expanded="@(abierto ? "true" : "false")"
+                                aria-controls="@idDetalle" @onclick="() => Alternar(grupo)">
+                            <span class="grupo-producto-flecha" aria-hidden="true">@(abierto ? "▾" : "▸")</span>
+                            <span class="grupo-producto-nombre">
+                                <span class="d-block fw-bold">@grupo.TipoProducto</span>
+                                <span class="d-block detalle-celda texto-secundario">@(grupo.MarcaProducto?.Nombre ?? "—") › @(grupo.Perfil?.Nombre ?? "—")</span>
+                            </span>
+                            <span class="chip">@grupo.Tiendas @(grupo.Tiendas == 1 ? "tienda" : "tiendas")</span>
+                            <span class="grupo-producto-total" title="@($"{Formato.Completo(grupo.Espacios)} espacios")">
+                                <span class="d-block grupo-producto-cifra">@Formato.Entero(grupo.CargaTotal)</span>
+                                <span class="d-block detalle-celda texto-secundario">unidades</span>
+                            </span>
+                        </button>
+                        @if (abierto)
+                        {
+                            <div class="table-responsive" id="@idDetalle">
+                                <table class="table align-middle mb-0 tabla-producto">
+                                    <caption class="visually-hidden">Tiendas que reciben @grupo.TipoProducto</caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Tienda</th>
+                                            <th scope="col">Regional / marca</th>
+                                            <th scope="col" class="text-end">Espacios</th>
+                                            <th scope="col" class="text-end">Unid. / espacio</th>
+                                            <th scope="col" class="text-end">Carga total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var fila in grupo.Filas)
+                                        {
+                                            <tr @key="fila.Clave">
+                                                <td>
+                                                    <a href="@($"tiendas/{fila.Tienda.CodigoHanna}")">@fila.Tienda.CodigoHanna</a>
+                                                    <span class="d-block detalle-celda texto-secundario">@fila.Tienda.Nombre</span>
+                                                </td>
+                                                <td>
+                                                    <span class="d-block">@fila.Tienda.Regional.Nombre</span>
+                                                    <span class="chip mt-1">@fila.Tienda.MarcaTienda.Nombre</span>
+                                                </td>
+                                                <td class="text-end" title="@Formato.Completo(fila.Linea.EspaciosCalculados)">@Formato.Decimal4(fila.Linea.EspaciosCalculados)</td>
+                                                <td class="text-end">@Formato.Entero(fila.Linea.UnidadesPorEspacio)</td>
+                                                <td class="text-end fw-bold celda-carga">@Formato.Entero(fila.Linea.CargaTotal)</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fila-total">
+                                            <th scope="row" colspan="2">Total @grupo.TipoProducto</th>
+                                            <td class="text-end" title="@Formato.Completo(grupo.Espacios)">@Formato.Decimal4(grupo.Espacios)</td>
+                                            <td></td>
+                                            <td class="text-end">@Formato.Entero(grupo.CargaTotal)</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+        }
         else
         {
+            <p class="form-text mx-4 mt-3 mb-2">Haga clic en un encabezado para ordenar.</p>
             <div class="table-responsive">
                 <QuickGrid Items="FilasConsulta" Class="table table-striped table-hover align-middle tabla-explorador">
                     <TemplateColumn Title="Tienda" Context="fila" SortBy="PorTienda" Sortable="true">

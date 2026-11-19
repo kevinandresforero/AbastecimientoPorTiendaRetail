@@ -33,6 +33,9 @@ public partial class Explorador
     private readonly List<(TiendaRespuesta Tienda, ExcepcionApi Error)> erroresTiendas = [];
     private List<FilaExplorador> todas = [];
     private List<FilaExplorador> filtradas = [];
+    private List<GrupoProducto> grupos = [];
+    private HashSet<string>? abiertos;
+    private bool vistaPorProducto;
     private IReadOnlyList<TiendaRespuesta> tiendas = [];
     private IReadOnlyList<NivelRespuesta> niveles = [];
     private IReadOnlyList<CatalogoRespuesta> regionales = [];
@@ -129,7 +132,33 @@ public partial class Explorador
         }
     }
 
-    private void Filtrar() => filtradas = ExploradorCargas.Filtrar(todas, filtro);
+    private void Filtrar()
+    {
+        filtradas = ExploradorCargas.Filtrar(todas, filtro);
+        grupos = ExploradorCargas.AgruparPorProducto(filtradas);
+    }
+
+    private void CambiarVista(bool porProducto) => vistaPorProducto = porProducto;
+
+    /// <summary>Por defecto solo esta abierto el primer producto (el de mas carga).</summary>
+    private bool EstaAbierto(GrupoProducto grupo) =>
+        abiertos?.Contains(grupo.Clave) ?? (grupos.Count > 0 && ReferenceEquals(grupo, grupos[0]));
+
+    private void Alternar(GrupoProducto grupo)
+    {
+        abiertos ??= grupos.Where(EstaAbierto).Select(g => g.Clave).ToHashSet(StringComparer.Ordinal);
+        if (!abiertos.Remove(grupo.Clave))
+        {
+            abiertos.Add(grupo.Clave);
+        }
+    }
+
+    private void ExpandirTodos() => abiertos = grupos.Select(g => g.Clave).ToHashSet(StringComparer.Ordinal);
+
+    private void ContraerTodos() => abiertos = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Id HTML estable del grupo (para aria-controls).</summary>
+    private int IdGrupo(GrupoProducto grupo) => grupos.IndexOf(grupo);
 
     private void CambiarNivel()
     {

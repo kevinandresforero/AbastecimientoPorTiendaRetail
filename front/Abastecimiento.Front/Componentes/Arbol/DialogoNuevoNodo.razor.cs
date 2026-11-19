@@ -29,6 +29,10 @@ public partial class DialogoNuevoNodo
     [Parameter]
     public NodoArbolRespuesta? Padre { get; set; }
 
+    /// <summary>Codigo HANNA de la tienda cuyo arbol se modifica.</summary>
+    [Parameter, EditorRequired]
+    public int CodigoHanna { get; set; }
+
     /// <summary>Niveles de la jerarquia.</summary>
     [Parameter]
     public IReadOnlyList<NivelRespuesta> Niveles { get; set; } = [];
@@ -89,6 +93,7 @@ public partial class DialogoNuevoNodo
         NodoArbolRespuesta? creado = null;
         errorEnvio = await LlamarApiAsync(async ct =>
             creado = await ClienteArbol.CrearNodoAsync(
+                CodigoHanna,
                 new CrearNodoSolicitud(Padre?.NodoId, formulario.ConceptoComercialId ?? 0, formulario.Fraccion), ct));
         enviando = false;
 

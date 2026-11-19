@@ -92,6 +92,85 @@ public class ExploradorPruebas : TestContext
     }
 
     [Fact]
+    public void Agrupa_por_producto_con_sus_tiendas_y_total()
+    {
+        var grupos = ExploradorCargas.AgruparPorProducto(Filas());
+
+        Assert.Equal(6, grupos.Count);
+        var labiales = Assert.Single(grupos, g => g.TipoProducto == "LABIALES");
+        Assert.Equal(2, labiales.Tiendas);
+        Assert.Equal(819 + 819, labiales.CargaTotal);
+        Assert.Equal("LILI BEAUTY", labiales.MarcaProducto?.Nombre);
+        Assert.Equal("LABIOS", labiales.Perfil?.Nombre);
+        Assert.Equal(grupos.Select(g => g.CargaTotal).OrderDescending(), grupos.Select(g => g.CargaTotal));
+    }
+
+    [Fact]
+    public void Agrupa_por_ruta_aunque_cada_tienda_tenga_su_propio_nodo()
+    {
+        // Arbol por tienda: el mismo producto tiene otro NodoId en la otra tienda; debe quedar en un solo grupo.
+        var carga2045 = Datos5503.Carga() with
+        {
+            Lineas = Datos5503.Carga().Lineas.Select(l => l with { NodoId = l.NodoId + 1000, CargaTotal = l.CargaTotal / 2 }).ToList()
+        };
+        List<FilaExplorador> filas =
+        [
+            .. ExploradorCargas.Construir(T5503, Datos5503.Carga(), Datos5503.Niveles),
+            .. ExploradorCargas.Construir(T2045, carga2045, Datos5503.Niveles)
+        ];
+
+        var grupos = ExploradorCargas.AgruparPorProducto(filas);
+
+        Assert.Equal(6, grupos.Count);
+        var labiales = Assert.Single(grupos, g => g.TipoProducto == "LABIALES");
+        Assert.Equal([5503, 2045], labiales.Filas.Select(f => f.Tienda.CodigoHanna));
+        Assert.Equal(819 + 409, labiales.CargaTotal);
+    }
+
+    [Fact]
+    public void Productos_con_el_mismo_nombre_en_otra_marca_son_grupos_distintos()
+    {
+        var grupos = ExploradorCargas.AgruparPorProducto(Filas());
+
+        Assert.Equal(grupos.Count, grupos.Select(g => g.Clave).Distinct().Count());
+        Assert.Contains(grupos, g => g.TipoProducto == "BÁLSAMO LABIAL" && g.MarcaProducto?.Nombre == "KARITE");
+    }
+
+    [Fact]
+    public void Vista_por_producto_muestra_que_va_donde_va_y_cuanto()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddSingleton<IClienteTiendas>(new ListadoFalso([T5503, T2045]));
+        Services.AddSingleton<IClienteCarga>(new CargaPorTiendaFalsa());
+        Services.AddSingleton<IClienteArbolComercial>(new ArbolFalso());
+
+        var cut = RenderComponent<Explorador>();
+        cut.WaitForAssertion(() => Assert.Equal(12, cut.FindAll("table.tabla-explorador tbody tr").Count));
+
+        cut.Find("#vista-producto").Click();
+
+        Assert.Equal(6, cut.FindAll(".grupo-producto").Count);
+        Assert.Equal("true", cut.Find("#vista-producto").GetAttribute("aria-pressed"));
+        // Solo el primero (mayor carga: LABIALES 819 x 2 = 1.638) viene abierto, con sus 2 tiendas y su total.
+        var primero = cut.FindAll(".grupo-producto")[0];
+        Assert.Contains("LABIALES", primero.TextContent);
+        Assert.Contains("1.638", primero.QuerySelector(".grupo-producto-cifra")!.TextContent);
+        Assert.Equal(2, primero.QuerySelectorAll("table.tabla-producto tbody tr").Length);
+        Assert.Single(cut.FindAll("table.tabla-producto"));
+
+        cut.FindAll("button").First(b => b.TextContent.Contains("Expandir todo")).Click();
+        Assert.Equal(6, cut.FindAll("table.tabla-producto").Count);
+
+        cut.Find("#explorador-regional").Change(Bogota.Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var labiales = cut.FindAll(".grupo-producto").First(g => g.TextContent.Contains("LABIALES"));
+        Assert.Contains("819", labiales.QuerySelector(".grupo-producto-cifra")!.TextContent);
+        Assert.Contains("1 tienda", labiales.TextContent);
+
+        cut.FindAll("button").First(b => b.TextContent.Contains("Contraer todo")).Click();
+        Assert.Empty(cut.FindAll("table.tabla-producto"));
+    }
+
+    [Fact]
     public void Filtro_de_nodos_por_nivel_hoja_y_busqueda()
     {
         NodoArbolRespuesta Nodo(int id, string nombre, string nivel, bool hoja, string ruta) =>

@@ -46,14 +46,22 @@ public sealed class TiendasFalsas : IClienteTiendas
 {
     public List<CrearTiendaSolicitud> Creadas { get; } = [];
 
+    /// <summary>Tiendas devueltas por <see cref="ListarAsync"/> (por defecto ninguna).</summary>
+    public List<TiendaRespuesta> Listado { get; } = [];
+
+    /// <summary>Tiendas devueltas por <see cref="ObtenerAsync"/>; el resto responde 404.</summary>
+    public Dictionary<int, TiendaRespuesta> PorCodigo { get; } = [];
+
     /// <summary>Si no es null, CrearAsync lanza este error.</summary>
     public ExcepcionApi? ErrorAlCrear { get; set; }
 
     public Task<IReadOnlyList<TiendaRespuesta>> ListarAsync(int? marcaTiendaId, int? regionalId, CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<TiendaRespuesta>>([]);
+        Task.FromResult<IReadOnlyList<TiendaRespuesta>>(Listado);
 
     public Task<TiendaRespuesta> ObtenerAsync(int codigoHanna, CancellationToken ct) =>
-        throw new ExcepcionApi(404, "Recurso no encontrado", $"No existe la tienda {codigoHanna}.");
+        PorCodigo.TryGetValue(codigoHanna, out var tienda)
+            ? Task.FromResult(tienda)
+            : throw new ExcepcionApi(404, "Recurso no encontrado", $"No existe la tienda {codigoHanna}.");
 
     public Task<TiendaRespuesta> CrearAsync(CrearTiendaSolicitud solicitud, CancellationToken ct)
     {
@@ -78,11 +86,23 @@ public sealed class ArbolFalso : IClienteArbolComercial
 
     public List<CrearNodoSolicitud> NodosCreados { get; } = [];
 
+    public List<(int Destino, int Origen)> CopiasSolicitadas { get; } = [];
+
+    /// <summary>Arboles por codigo HANNA; las tiendas sin entrada se consideran vacias.</summary>
+    public Dictionary<int, List<NodoArbolRespuesta>> Arboles { get; } = [];
+
+    /// <summary>Codigos HANNA consultados con <see cref="ObtenerArbolAsync"/>.</summary>
+    public List<int> ConsultasArbol { get; } = [];
+
     public Task<IReadOnlyList<NivelRespuesta>> ObtenerNivelesAsync(CancellationToken ct) =>
         Task.FromResult(Datos5503.Niveles);
 
-    public Task<IReadOnlyList<NodoArbolRespuesta>> ObtenerArbolAsync(CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<NodoArbolRespuesta>>([]);
+    public Task<IReadOnlyList<NodoArbolRespuesta>> ObtenerArbolAsync(int codigoHanna, CancellationToken ct)
+    {
+        ConsultasArbol.Add(codigoHanna);
+        return Task.FromResult<IReadOnlyList<NodoArbolRespuesta>>(
+            Arboles.TryGetValue(codigoHanna, out var nodos) ? nodos : []);
+    }
 
     public Task<IReadOnlyList<ConceptoRespuesta>> ListarConceptosAsync(int? nivelJerarquiaId, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<ConceptoRespuesta>>([]);
@@ -94,10 +114,16 @@ public sealed class ArbolFalso : IClienteArbolComercial
         return Task.FromResult(new ConceptoRespuesta(100, solicitud.Nombre, nivel, solicitud.UnidadesPorEspacio));
     }
 
-    public Task<NodoArbolRespuesta> CrearNodoAsync(CrearNodoSolicitud solicitud, CancellationToken ct)
+    public Task<NodoArbolRespuesta> CrearNodoAsync(int codigoHanna, CrearNodoSolicitud solicitud, CancellationToken ct)
     {
         NodosCreados.Add(solicitud);
         return Task.FromResult(Nodo(200, solicitud.PorcentajeParticipacion));
+    }
+
+    public Task<CopiaArbolRespuesta> CopiarArbolAsync(int codigoHannaDestino, int codigoHannaOrigen, CancellationToken ct)
+    {
+        CopiasSolicitadas.Add((codigoHannaDestino, codigoHannaOrigen));
+        return Task.FromResult(new CopiaArbolRespuesta(codigoHannaOrigen, codigoHannaDestino, 18));
     }
 
     public Task<NodoArbolRespuesta> ActualizarPorcentajeAsync(int nodoId, decimal porcentajeParticipacion, CancellationToken ct)

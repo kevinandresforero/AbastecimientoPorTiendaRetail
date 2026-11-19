@@ -18,6 +18,27 @@ public sealed record FilaExplorador(
     public string Clave => $"{Tienda.CodigoHanna}-{Linea.NodoId}";
 }
 
+/// <summary>
+/// Un tipo de producto con las tiendas a las que va y cuanto (vista "Por producto" del explorador). Los totales son sumas
+/// de los valores que entrega la API para cada tienda; no se recalcula la cascada.
+/// </summary>
+public sealed record GrupoProducto(
+    string Clave,
+    string TipoProducto,
+    PasoRutaRespuesta? MarcaProducto,
+    PasoRutaRespuesta? Perfil,
+    IReadOnlyList<FilaExplorador> Filas)
+{
+    /// <summary>Unidades del producto en todas las tiendas del grupo.</summary>
+    public int CargaTotal => Filas.Sum(f => f.Linea.CargaTotal);
+
+    /// <summary>Espacios asignados al producto en todas las tiendas del grupo.</summary>
+    public decimal Espacios => Filas.Sum(f => f.Linea.EspaciosCalculados);
+
+    /// <summary>Tiendas distintas que reciben el producto.</summary>
+    public int Tiendas => Filas.Select(f => f.Tienda.CodigoHanna).Distinct().Count();
+}
+
 /// <summary>Filtros del explorador de cargas; null o vacio = sin filtrar por ese campo.</summary>
 public sealed class FiltroCargas
 {
@@ -83,6 +104,31 @@ public static class ExploradorCargas
                 && palabras.All(p => Contiene(TextoBuscable(f), p)))
             .ToList();
     }
+
+    /// <summary>
+    /// Agrupa las filas por producto: la clave es la ruta de conceptos (nombres) de la raiz a la hoja, no el id del nodo,
+    /// porque cada tienda tiene su propio arbol y el mismo producto tiene un nodo distinto en cada una. Productos de mayor
+    /// a menor carga; dentro, tiendas de mayor a menor carga.
+    /// </summary>
+    public static List<GrupoProducto> AgruparPorProducto(IEnumerable<FilaExplorador> filas) =>
+        filas.GroupBy(ClaveProducto, StringComparer.Ordinal)
+            .Select(g =>
+            {
+                var primera = g.First();
+                return new GrupoProducto(
+                    g.Key,
+                    primera.Linea.TipoProducto,
+                    primera.MarcaProducto,
+                    primera.Perfil,
+                    g.OrderByDescending(f => f.Linea.CargaTotal).ThenBy(f => f.Tienda.CodigoHanna).ToList());
+            })
+            .OrderByDescending(g => g.CargaTotal)
+            .ThenBy(g => g.TipoProducto, StringComparer.Create(CultureInfo.InvariantCulture, ignoreCase: true))
+            .ToList();
+
+    /// <summary>Clave del producto: nombres de la ruta de la raiz a la hoja.</summary>
+    public static string ClaveProducto(FilaExplorador fila) =>
+        string.Join(" › ", fila.Linea.Ruta.Select(p => p.Nombre));
 
     /// <summary>Conceptos distintos de un nivel presentes en las filas, ordenados (opciones del filtro).</summary>
     public static List<string> Conceptos(IEnumerable<FilaExplorador> filas, string? nivel) =>

@@ -7,6 +7,7 @@ public interface IMotorCalculoCarga
 {
     /// <summary>Distribuye los espacios totales de una tienda por el arbol y calcula la carga de cada tipo de producto.</summary>
     /// <param name="espaciosTotales">Espacios fisicos totales de la tienda (Regla 1).</param>
-    /// <param name="nodos">Arbol completo con concepto y nivel cargados.</param>
-    ResultadoCalculo Calcular(int espaciosTotales, IReadOnlyList<NodoComercial> nodos);
+    /// <param name="nodos">Arbol de la tienda con concepto y nivel cargados.</param>
+    /// <param name="profundidadHoja">Profundidad del nivel hoja segun <c>NivelesJerarquia</c>.</param>
+    ResultadoCalculo Calcular(int espaciosTotales, IReadOnlyList<NodoComercial> nodos, int profundidadHoja);
 }

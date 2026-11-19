@@ -92,11 +92,44 @@ public class ClientesPruebas
         var cliente = new ClienteArbolComercial(ManejadorFalso.Cliente(manejador));
 
         var error = await Assert.ThrowsAsync<ExcepcionApi>(() => cliente.CrearNodoAsync(
-            new CrearNodoSolicitud(6, 9, 0.5m), CancellationToken.None));
+            5503, new CrearNodoSolicitud(6, 9, 0.5m), CancellationToken.None));
 
         Assert.Equal(400, error.Estado);
         Assert.Equal("La suma de porcentajes de los nodos hermanos (1.010000) supera 1.", Assert.Single(error.Errores));
         Assert.Empty(error.ErroresPorCampo);
+    }
+
+    [Fact]
+    public async Task Arbol_y_nodos_usan_rutas_por_tienda()
+    {
+        var manejador = new ManejadorFalso(solicitud => solicitud.Method == HttpMethod.Get
+            ? ManejadorFalso.Json(HttpStatusCode.OK, "[]")
+            : ManejadorFalso.Json(HttpStatusCode.Created,
+                """{"nodoId":200,"nodoPadreId":2001,"conceptoComercialId":2,"nombre":"HOGAR","nivel":"Categoría","profundidad":2,"porcentajeParticipacion":0.2,"porcentajeAcumulado":0.2,"ruta":"BELLEZA Y BIENESTAR > HOGAR","unidadesPorEspacio":null,"esHoja":false}"""));
+        var cliente = new ClienteArbolComercial(ManejadorFalso.Cliente(manejador));
+
+        await cliente.ObtenerArbolAsync(1001, CancellationToken.None);
+        await cliente.CrearNodoAsync(1001, new CrearNodoSolicitud(2001, 2, 0.2m), CancellationToken.None);
+
+        Assert.Equal("/api/tiendas/1001/arbol-comercial", manejador.Recibidas[0].Solicitud.RequestUri!.PathAndQuery);
+        Assert.Equal("/api/tiendas/1001/nodos-comerciales", manejador.Recibidas[1].Solicitud.RequestUri!.PathAndQuery);
+        Assert.Contains("\"porcentajeParticipacion\":0.2", manejador.Recibidas[1].Cuerpo);
+    }
+
+    [Fact]
+    public async Task Copiar_arbol_hace_post_sin_cuerpo_a_la_ruta_del_destino()
+    {
+        var manejador = new ManejadorFalso(_ => ManejadorFalso.Json(HttpStatusCode.Created,
+            """{"codigoHannaOrigen":5503,"codigoHannaDestino":7000,"nodosCopiados":18}"""));
+        var cliente = new ClienteArbolComercial(ManejadorFalso.Cliente(manejador));
+
+        var copia = await cliente.CopiarArbolAsync(7000, 5503, CancellationToken.None);
+
+        var (solicitud, cuerpo) = Assert.Single(manejador.Recibidas);
+        Assert.Equal(HttpMethod.Post, solicitud.Method);
+        Assert.Equal("/api/tiendas/7000/arbol-comercial/copiar-desde/5503", solicitud.RequestUri!.PathAndQuery);
+        Assert.Null(cuerpo);
+        Assert.Equal((5503, 7000, 18), (copia.CodigoHannaOrigen, copia.CodigoHannaDestino, copia.NodosCopiados));
     }
 
     [Fact]

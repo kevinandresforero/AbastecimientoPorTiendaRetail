@@ -8,14 +8,14 @@ namespace Abastecimiento.Aplicacion.Motor;
 /// <summary>
 /// Implementacion del motor. Todo el calculo usa <see cref="decimal"/> sin redondeos intermedios;
 /// el unico redondeo es la Carga Total de cada linea (<see cref="RedondeoHelper"/>). La profundidad hoja
-/// se deriva de los datos: no hay numero de nivel fijo en el codigo.
+/// llega como parametro desde <c>NivelesJerarquia</c>: no hay numero de nivel fijo en el codigo.
 /// </summary>
 public sealed class MotorCalculoCarga(IOptions<OpcionesCalculo> opciones) : IMotorCalculoCarga
 {
-    public ResultadoCalculo Calcular(int espaciosTotales, IReadOnlyList<NodoComercial> nodos)
+    public ResultadoCalculo Calcular(int espaciosTotales, IReadOnlyList<NodoComercial> nodos, int profundidadHoja)
     {
         var modo = opciones.Value.ModoRedondeo;
-        var arbol = ArbolComercialHelper.Indexar(nodos);
+        var arbol = ArbolComercialHelper.Indexar(nodos, profundidadHoja);
 
         var calculados = new List<NodoCalculado>();
         var lineas = new List<LineaCalculada>();

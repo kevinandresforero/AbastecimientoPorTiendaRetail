@@ -28,7 +28,7 @@ public class ServiciosPruebas
         new CatalogoRepositorioFalso<ResponsableVisual>(datos.ResponsablesVisuales),
         unidadDeTrabajo);
 
-    private ServicioArbolComercial CrearServicioArbol() => new(arbol, unidadDeTrabajo);
+    private ServicioArbolComercial CrearServicioArbol() => new(arbol, new TiendaRepositorioFalso(datos), unidadDeTrabajo);
 
     private ServicioReportes CrearServicioReportes() => new(new TiendaRepositorioFalso(datos), arbol, motor);
 
@@ -99,7 +99,7 @@ public class ServiciosPruebas
         var solicitud = new CrearNodoSolicitud { NodoPadreId = 2, ConceptoComercialId = 5, PorcentajeParticipacion = 0.01m };
 
         var ex = await Assert.ThrowsAsync<ValidacionDominioExcepcion>(() =>
-            CrearServicioArbol().CrearNodoAsync(solicitud, CancellationToken.None));
+            CrearServicioArbol().CrearNodoAsync(5503, solicitud, CancellationToken.None));
 
         Assert.Contains(ex.Errores, e => e.Contains("profundidad 3"));
     }
@@ -113,7 +113,7 @@ public class ServiciosPruebas
         var solicitud = new CrearNodoSolicitud { NodoPadreId = 2, ConceptoComercialId = concepto.Id, PorcentajeParticipacion = 0.1m };
 
         var ex = await Assert.ThrowsAsync<ValidacionDominioExcepcion>(() =>
-            CrearServicioArbol().CrearNodoAsync(solicitud, CancellationToken.None));
+            CrearServicioArbol().CrearNodoAsync(5503, solicitud, CancellationToken.None));
 
         Assert.Contains(ex.Errores, e => e.Contains("supera 1"));
     }
@@ -126,6 +126,7 @@ public class ServiciosPruebas
             new CrearConceptoSolicitud { NivelJerarquiaId = 2, Nombre = "HOGAR" }, CancellationToken.None);
 
         var nodo = await servicio.CrearNodoAsync(
+            5503,
             new CrearNodoSolicitud { NodoPadreId = 1, ConceptoComercialId = concepto.Id, PorcentajeParticipacion = 0.2m },
             CancellationToken.None);
 
@@ -179,6 +180,46 @@ public class ServiciosPruebas
         Assert.Equal(2966, carga.TotalCarga);
         Assert.Equal(new[] { 819, 670, 482, 469, 288, 238 }, carga.Lineas.Select(l => l.CargaTotal).ToArray());
         Assert.Equal(7, carga.Lineas[0].Ruta.Count);
+    }
+
+    [Fact]
+    public async Task CargaDe1001Y2045UsanElArbolDeSuTienda()
+    {
+        var servicio = new ServicioCarga(new TiendaRepositorioFalso(datos), arbol, motor);
+
+        var tienda1001 = await servicio.CalcularPorCodigoHannaAsync(1001, CancellationToken.None);
+        var tienda2045 = await servicio.CalcularPorCodigoHannaAsync(2045, CancellationToken.None);
+
+        Assert.Equal((30, 9m, 4046), (tienda1001.EspaciosTotales, tienda1001.TotalEspaciosAsignados, tienda1001.TotalCarga));
+        Assert.Equal((20, 6m, 2696), (tienda2045.EspaciosTotales, tienda2045.TotalEspaciosAsignados, tienda2045.TotalCarga));
+    }
+
+    [Fact]
+    public async Task TiendaNuevaNaceSinArbolYSuCargaEsCeroConAdvertencia()
+    {
+        var creada = await CrearServicioTiendas().CrearAsync(Solicitud(3000, (1, 5), (4, 3), (7, 14)), CancellationToken.None);
+        var servicio = new ServicioCarga(new TiendaRepositorioFalso(datos), arbol, motor);
+
+        var carga = await servicio.CalcularPorCodigoHannaAsync(creada.CodigoHanna, CancellationToken.None);
+
+        Assert.Empty(carga.Lineas);
+        Assert.Equal(0, carga.TotalCarga);
+        Assert.Contains("no tiene unidades de negocio", Assert.Single(carga.Advertencias));
+    }
+
+    [Fact]
+    public async Task CopiarArbolATiendaNuevaPermiteCalcularLaCargaDelEnunciado()
+    {
+        var creada = await CrearServicioTiendas().CrearAsync(Solicitud(3000, (1, 5), (4, 3), (7, 14)), CancellationToken.None);
+        var copia = await CrearServicioArbol().CopiarArbolAsync(creada.CodigoHanna, 5503, CancellationToken.None);
+        var servicio = new ServicioCarga(new TiendaRepositorioFalso(datos), arbol, motor);
+
+        var carga = await servicio.CalcularPorCodigoHannaAsync(creada.CodigoHanna, CancellationToken.None);
+
+        Assert.Equal(18, copia.NodosCopiados);
+        Assert.Equal(22, carga.EspaciosTotales);
+        Assert.Equal(6.6m, carga.TotalEspaciosAsignados);
+        Assert.Equal(2966, carga.TotalCarga);
     }
 
     [Fact]
