@@ -163,6 +163,47 @@ flowchart LR
 La `api` está en las dos redes; el `front` solo está en `web`, así que únicamente ve a la API y no puede alcanzar la
 base de datos.
 
+### Docker en ejecución
+
+Qué pasa desde `docker compose up -d --build` hasta que un usuario consulta una carga:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Desarrollador
+    participant DC as Docker Compose
+    participant DB as db (SQL Server)
+    participant API as api (.NET 8)
+    participant FR as front (Blazor)
+    actor U as Navegador
+
+    Dev->>DC: docker compose up -d --build
+    DC->>DC: build de las imágenes api y front
+    DC->>DB: inicia el contenedor (volumen datos-sql)
+    loop healthcheck cada 10 s (hasta 10 intentos)
+        DC->>DB: sqlcmd SELECT 1
+        DB-->>DC: ok → healthy
+    end
+    DC->>API: inicia (depends_on db: service_healthy)
+    API->>DB: Database.MigrateAsync() — migraciones + semilla
+    DB-->>API: base lista (54 nodos, 3 tiendas)
+    Note over API: escucha en :8080 (Swagger)<br/>restart: on-failure
+    DC->>FR: inicia (depends_on api)
+    Note over FR: escucha en :8080 del contenedor<br/>publicado en localhost:3000
+
+    U->>FR: GET http://localhost:3000/tiendas/5503
+    FR-->>U: HTML + blazor.web.js
+    U-)FR: conexión SignalR (WebSocket)
+    FR->>API: GET http://api:8080/api/carga/5503 (red web)
+    API->>DB: consulta árbol y espacios (red datos)
+    DB-->>API: filas
+    API-->>FR: JSON totalCarga 2966
+    FR-->>U: diferencias de HTML por SignalR
+```
+
+Con `docker compose down` se detienen los tres contenedores y los datos se conservan en `datos-sql`; con
+`down -v` también se borra el volumen y el siguiente `up` vuelve a migrar y sembrar.
+
 ### Clean Architecture
 
 ```mermaid
