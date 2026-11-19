@@ -115,6 +115,12 @@ public class CatalogoRepositorio<T>(AbastecimientoDbContext contexto) : ICatalog
         contexto.Set<T>().AnyAsync(c => c.Nombre == nombre, ct);
 }
 
+/// <summary>Crea repositorios de catalogo sobre el mismo <see cref="AbastecimientoDbContext"/> (misma transaccion).</summary>
+public class CatalogoRepositorioFabrica(AbastecimientoDbContext contexto) : ICatalogoRepositorioFabrica
+{
+    public ICatalogoRepositorio<T> Obtener<T>() where T : EntidadCatalogo => new CatalogoRepositorio<T>(contexto);
+}
+
 public class TipoEspacioRepositorio(AbastecimientoDbContext contexto) : ITipoEspacioRepositorio
 {
     public async Task<IReadOnlyList<TipoEspacio>> ObtenerTodosAsync(CancellationToken ct = default) =>

@@ -57,7 +57,7 @@ public sealed record CrearNodoSolicitud
     [Range(1, int.MaxValue)]
     public int ConceptoComercialId { get; init; }
 
-    /// <summary>Fraccion respecto al padre, en (0, 1]: 0.3 = 30%.</summary>
+    /// <summary>Fraccion respecto al padre, en (0, 1]: 0.3 = 30%. Se guarda con maximo 6 decimales (decimal(18,6)).</summary>
     [Range(typeof(decimal), "0.000001", "1", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     public decimal PorcentajeParticipacion { get; init; }
 }
@@ -65,7 +65,7 @@ public sealed record CrearNodoSolicitud
 /// <summary>Nuevo porcentaje de participacion de un nodo.</summary>
 public sealed record ActualizarPorcentajeSolicitud
 {
-    /// <summary>Fraccion respecto al padre, en (0, 1]: 0.3 = 30%.</summary>
+    /// <summary>Fraccion respecto al padre, en (0, 1]: 0.3 = 30%. Se guarda con maximo 6 decimales (decimal(18,6)).</summary>
     [Range(typeof(decimal), "0.000001", "1", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     public decimal PorcentajeParticipacion { get; init; }
 }

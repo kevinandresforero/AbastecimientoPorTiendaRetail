@@ -22,6 +22,7 @@ public sealed class FactSqlServerAttribute : FactAttribute
     }
 }
 
+[Collection(ColeccionSqlServer.Nombre)]
 public class RepositoriosSqlServerPruebas
 {
     private static AbastecimientoDbContext CrearContexto(List<string> comandos)

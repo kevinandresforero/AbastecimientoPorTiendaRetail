@@ -17,6 +17,7 @@ public static class InyeccionDependencias
         servicios.AddScoped<ITiendaRepositorio, TiendaRepositorio>();
         servicios.AddScoped<IArbolComercialRepositorio, ArbolComercialRepositorio>();
         servicios.AddScoped(typeof(ICatalogoRepositorio<>), typeof(CatalogoRepositorio<>));
+        servicios.AddScoped<ICatalogoRepositorioFabrica, CatalogoRepositorioFabrica>();
         servicios.AddScoped<ITipoEspacioRepositorio, TipoEspacioRepositorio>();
 
         return servicios;

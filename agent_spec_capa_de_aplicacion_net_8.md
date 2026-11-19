@@ -40,6 +40,8 @@ Calidad del codigo **20%**, Documentacion **10%**.
 * **Helpers:** clases `static` puras (sin estado, sin E/S, sin dependencias inyectadas) para operaciones que se repiten en varios servicios: recorrido del arbol, redondeo y mapeo entidad → DTO.
 * **Reglas de dominio existentes se reutilizan, no se duplican:** `ReglasEspaciosTienda.Validar`, `ValidadorArbolComercial.ValidarConcepto / ValidarNodo / ObtenerProfundidadHoja`.
 * **Precision:** `decimal` en todo calculo de espacios, porcentajes y carga. PROHIBIDO `float`/`double`. **Ningun redondeo intermedio**; el unico redondeo es la Carga Total de cada linea (nota tecnica del enunciado).
+  * **Calculo / API: hasta 28 decimales.** `decimal` de C# es base 10 (0.3 y 0.94 son exactos, sin el error binario de `float`/`double`), con 28-29 digitos significativos y escala maxima 28. Con porcentajes de 6 decimales la escala crece 6 por nivel (6, 12, 18, 24) y desde el nivel 5 queda en el tope de 28; el error maximo posible esta en el decimal 28 (< 1e-28 espacios), por lo que nunca cambia una unidad de Carga Total.
+  * **BD: 6 decimales** en `NodosComerciales.PorcentajeParticipacion` (`decimal(18,6)`): el porcentaje se guarda como fraccion (0.300000 = 30%), granularidad 0.0001%. Espacios y unidades por espacio son `int`. Espacios y cargas calculados no se persisten (se calculan en cada consulta). Un porcentaje con mas de 6 decimales lo redondea SQL Server al guardarlo.
 * **Generico en profundidad:** ningun numero de nivel fijo (ni "7") en el codigo; la hoja se deriva con `ValidadorArbolComercial.ObtenerProfundidadHoja`.
 * **Idioma:** espanol sin tildes ni ñ en clases, metodos, rutas, parametros y propiedades JSON (camelCase). Los valores de datos conservan su texto original.
 * **Async** de punta a punta con `CancellationToken` propagado desde el controller hasta el repositorio.
@@ -309,7 +311,8 @@ Las pruebas de API que crean datos usan una base de datos propia (`Abastecimient
 ## 13. Supuestos
 * **A. Arbol global** (heredado): todas las tiendas usan el mismo arbol; 1001 y 2045 se calculan con el mismo arbol que 5503.
 * **B. Redondeo:** `AwayFromZero` por defecto, configurable; se aplica por linea. `totalCarga` = Σ lineas redondeadas (coincide con el enunciado; para 5503 ambas convenciones dan 2,966).
-* **C. Precision en la respuesta:** la API devuelve los decimales completos; el formato visual (ej. 4 decimales del enunciado) es responsabilidad del cliente.
+* **C. Precision en la respuesta:** la API devuelve los decimales significativos completos (hasta 28; ej. 1.67508, sin ceros sobrantes); el formato visual (ej. 4 decimales del enunciado) es responsabilidad del cliente. Ver §2 (28 decimales en el calculo, 6 en la BD).
+* **F. Capacidad y redondeo por linea:** redondear cada linea al entero mas cercano puede sumar hasta media unidad por linea por encima de la carga exacta. Con la semilla: 5503 → 2,966 sobre 2,966.49 exactas y 2045 → 2,696 sobre 2,696.81 (no superan); 1001 → 4,046 sobre 4,045.2156 (supera por 0.78 unidades). El enunciado no exige un tope de capacidad; si negocio no admite exceso se configura `Calculo:ModoRedondeo = ToZero` (entero inferior: 5503 → 2,964, nunca supera).
 * **D. "Marca" en R4b:** se interpreta como marca de tienda (`agruparPor=marcaTienda`); la marca de producto se obtiene con `agruparPor=nivel&nivelId=3`.
 * **E. Fuera de alcance:** editar/eliminar tiendas y nodos, autenticacion y autorizacion por roles.
 

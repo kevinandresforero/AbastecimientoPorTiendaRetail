@@ -40,7 +40,10 @@ builder.Services.AddSwaggerGen(opciones =>
             "* **Regla 2 — Distribucion en cascada:** Espacios_Nivel(n) = Espacios_Nivel(n-1) × %_Participacion(n), " +
             "sin redondeos intermedios.\n" +
             "* **Regla 3 — Carga total:** Carga_Total = Espacios_Tipo_Producto × Unidades_Por_Espacio; " +
-            "unico redondeo (configurable en `Calculo:ModoRedondeo`, por defecto AwayFromZero)."
+            "unico redondeo (configurable en `Calculo:ModoRedondeo`, por defecto AwayFromZero).\n\n" +
+            "**Precision:** el calculo usa `decimal` con hasta 28 decimales (sin redondeo intermedio); la base de datos " +
+            "guarda los porcentajes de participacion con 6 decimales (`decimal(18,6)`: 0.300000 = 30%). " +
+            "Las respuestas devuelven los decimales significativos completos; solo las cargas totales son enteras."
     });
 
     foreach (var ensamblado in new[] { Assembly.GetExecutingAssembly(), typeof(OpcionesCalculo).Assembly })

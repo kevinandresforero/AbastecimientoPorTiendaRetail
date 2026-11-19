@@ -2,6 +2,8 @@
 #   db  -> SQL Server 2022 (localhost:14333)
 #   api -> ASP.NET Core 8 (http://localhost:8080); aplica las migraciones y la semilla al arrancar
 #   front -> se agregara como tercer servicio cuando exista
+#   pruebas -> (perfil "pruebas") ejecuta TODAS las pruebas con .NET 8 contra el SQL Server del compose:
+#              docker compose --profile pruebas run --rm pruebas
 
 services:
   db:
@@ -11,7 +13,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Abastecimiento#2026}
     ports:
-      - "14333:1433"
+      - "${SQL_PUERTO:-14333}:1433"
     volumes:
       - datos-sql:/var/opt/mssql
     healthcheck:
@@ -36,6 +38,30 @@ services:
       - "8080:8080"
     restart: on-failure
 
+  # Solo con el perfil "pruebas": unitarias + integracion (repositorios y API) en la BD Abastecimiento_Pruebas.
+  # El repo se monta solo lectura y se copia sin .git, .claude, bin, obj ni .env para compilar limpio.
+  pruebas:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    profiles: ["pruebas"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ABASTECIMIENTO_PRUEBAS_SQL: "Server=db,1433;Database=Abastecimiento_Pruebas;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Abastecimiento#2026};TrustServerCertificate=True"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    volumes:
+      - .:/src:ro
+      - nuget-cache:/root/.nuget/packages
+    command:
+      - bash
+      - -c
+      - >-
+        mkdir -p /tmp/build &&
+        tar -C /src --exclude=./.git --exclude=./.claude --exclude=./.env --exclude='*/bin' --exclude='*/obj' -cf - . | tar -C /tmp/build -xf - &&
+        cd /tmp/build &&
+        dotnet test Abastecimiento.sln --logger "console;verbosity=normal"
+
   # front:
   #   build: ./front
   #   depends_on: [api]
@@ -43,3 +69,4 @@ services:
 
 volumes:
   datos-sql:
+  nuget-cache:

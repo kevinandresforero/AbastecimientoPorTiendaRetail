@@ -4,15 +4,14 @@ using Abastecimiento.Dominio.Entidades;
 using Abastecimiento.Dominio.Entidades.Tiendas;
 using Abastecimiento.Dominio.Excepciones;
 using Abastecimiento.Dominio.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Abastecimiento.Aplicacion.Servicios;
 
 /// <summary>
-/// Servicio generico de catalogos. El repositorio de cada tipo (<see cref="ICatalogoRepositorio{T}"/>, generico abierto
-/// registrado en el contenedor) se resuelve por tipo para no duplicar un servicio por catalogo.
+/// Servicio generico de catalogos. El repositorio de cada tipo se obtiene de <see cref="ICatalogoRepositorioFabrica"/>
+/// (dependencia explicita e inyectada) para no duplicar un servicio por catalogo.
 /// </summary>
-public sealed class ServicioCatalogos(IServiceProvider proveedor, IUnidadDeTrabajo unidadDeTrabajo) : ICatalogoServicio
+public sealed class ServicioCatalogos(ICatalogoRepositorioFabrica fabrica, IUnidadDeTrabajo unidadDeTrabajo) : ICatalogoServicio
 {
     private const int LongitudNombre = 50;
     private const int LongitudNombreResponsableVisual = 100;
@@ -47,6 +46,5 @@ public sealed class ServicioCatalogos(IServiceProvider proveedor, IUnidadDeTraba
         return MapeoHelper.ACatalogoRespuesta(entidad);
     }
 
-    private ICatalogoRepositorio<T> Repositorio<T>() where T : EntidadCatalogo =>
-        proveedor.GetRequiredService<ICatalogoRepositorio<T>>();
+    private ICatalogoRepositorio<T> Repositorio<T>() where T : EntidadCatalogo => fabrica.Obtener<T>();
 }

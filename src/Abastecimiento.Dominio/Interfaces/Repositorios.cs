@@ -55,6 +55,15 @@ public interface ICatalogoRepositorio<T> where T : EntidadCatalogo
     Task<bool> ExisteNombreAsync(string nombre, CancellationToken ct = default);
 }
 
+/// <summary>
+/// Entrega el repositorio de un catalogo cuyo tipo solo se conoce al invocar un metodo generico
+/// (ej. <c>ListarAsync&lt;T&gt;</c>). Evita que la capa de aplicacion resuelva dependencias del contenedor.
+/// </summary>
+public interface ICatalogoRepositorioFabrica
+{
+    ICatalogoRepositorio<T> Obtener<T>() where T : EntidadCatalogo;
+}
+
 /// <summary>Acceso al catalogo de tipos de espacio (mobiliario y perimetrales).</summary>
 public interface ITipoEspacioRepositorio
 {
