@@ -14,33 +14,130 @@ identico a la tabla del enunciado.
 
 ---
 
-## 1. Como compilar, migrar y probar
+## 1. Como levantar el backend en un computador limpio
 
-### Requisitos
-- Docker (opcion A) **o** .NET 8 SDK + SQL Server (opcion B).
+Hay dos rutas. Elige **una**:
 
-### Opcion A — todo en Docker (recomendada)
+| | Ruta A — con Docker (recomendada) | Ruta B — sin Docker |
+|---|---|---|
+| Instalas | Git + Docker | Git + .NET 8 SDK + SQL Server |
+| Comandos para levantar | 2 | 1 (despues de instalar y configurar SQL Server) |
+| URL de la API / Swagger | http://localhost:8080/swagger | http://localhost:5080/swagger |
+| Sistemas | Windows, macOS, Linux | Windows y Linux (macOS solo con un SQL Server remoto) |
+
+En ambas rutas la API **crea la base de datos, aplica las migraciones de EF Core y carga la semilla** (Seccion 4 del
+enunciado) al arrancar. No hay que ejecutar scripts SQL ni `dotnet ef`.
+
+### 1.1 Paso 0 (ambas rutas): Git y el codigo
+1. Instala Git: Windows `winget install Git.Git`; macOS `xcode-select --install`; Ubuntu/Debian `sudo apt install git`.
+2. Clona el repositorio y entra a la carpeta:
+   ```bash
+   git clone <URL-del-repositorio> abastecimiento_retail
+   cd abastecimiento_retail
+   ```
+3. Requisitos del equipo: **4 GB de RAM libres** (SQL Server pide minimo 2 GB) y los puertos **8080** (API en Docker),
+   **5080** (API con `dotnet run`) y **14333** (SQL Server en Docker) sin usar.
+
+> En Windows los comandos de esta guia van en **PowerShell**; donde la sintaxis cambia se indica la variante.
+
+### 1.2 Ruta A — con Docker (recomendada)
+**Instalar Docker** (una sola vez):
+
+| Sistema | Como |
+|---|---|
+| Windows 10/11 | `wsl --install` (reiniciar) y luego `winget install Docker.DockerDesktop`. Abrir Docker Desktop y esperar a que diga *Engine running*. |
+| macOS | Instalar [Docker Desktop](https://www.docker.com/products/docker-desktop/). En **Apple Silicon (M1/M2/M3)**: *Settings → General → "Use Rosetta for x86_64/amd64 emulation"*, porque la imagen de SQL Server solo existe para amd64. |
+| Linux (Ubuntu) | Docker Engine + plugin compose segun [docs.docker.com/engine/install](https://docs.docker.com/engine/install/ubuntu/); luego `sudo usermod -aG docker $USER` y cerrar/abrir sesion. |
+
+Comprobar: `docker compose version` debe mostrar la version 2.x.
+
+**Levantar:**
 ```bash
-cp .env.example .env            # contrasena de SQL Server para desarrollo (opcional cambiarla)
-docker compose up -d --build    # levanta SQL Server (db) y la API (api)
+cp .env.example .env            # Windows: copy .env.example .env   (contrasena de SQL Server de desarrollo)
+docker compose up -d --build    # SQL Server (db) + API (api); la primera vez descarga ~2 GB de imagenes
+docker compose ps               # esperar a que db diga "healthy" y api "running" (1-2 minutos la primera vez)
 ```
 - Swagger: **http://localhost:8080/swagger**
-- Al arrancar, la API aplica las migraciones de EF Core y la semilla (Seccion 4 del enunciado). No hay pasos manuales.
-- `docker compose down` / `up` conserva los datos (volumen `datos-sql`).
+- Detener: `docker compose down` (los datos se conservan en el volumen `datos-sql`).
+- Empezar de cero (borra la base): `docker compose down -v`.
+- Ver logs de la API: `docker compose logs -f api`.
 
-### Opcion B — `dotnet run` contra un SQL Server existente
+### 1.3 Ruta B — sin Docker
+**1. Instalar el SDK de .NET 8**
+
+| Sistema | Como |
+|---|---|
+| Windows | `winget install Microsoft.DotNet.SDK.8` |
+| Ubuntu 22.04+ | `sudo apt update && sudo apt install -y dotnet-sdk-8.0` |
+| macOS / otras distros Linux | Script oficial: `curl -sSL https://dot.net/v1/dotnet-install.sh \| bash -s -- --channel 8.0` y agregar `~/.dotnet` al `PATH` |
+
+Comprobar: `dotnet --list-sdks` debe listar una version `8.0.x`.
+(Si solo tienes un .NET mas nuevo, p. ej. 10, antepone `DOTNET_ROLL_FORWARD=Major` a los comandos `dotnet`.)
+
+**2. Instalar SQL Server y obtener la cadena de conexion**
+
+| Sistema | Opcion | Cadena de conexion |
+|---|---|---|
+| Windows (mas simple) | **SQL Server LocalDB**: instalador de [SQL Server 2022 Express](https://www.microsoft.com/es-es/sql-server/sql-server-downloads) → *Descargar medios* → *LocalDB* (o viene con Visual Studio). | Ya es la cadena por defecto de `appsettings.json`: **no necesitas `.env`**. |
+| Windows | SQL Server 2022 Express o Developer (instalacion basica). | `Server=localhost\SQLEXPRESS;Database=Abastecimiento;Trusted_Connection=True;TrustServerCertificate=True` |
+| Linux (Ubuntu 22.04 / RHEL) | SQL Server 2022 para Linux segun [learn.microsoft.com](https://learn.microsoft.com/es-es/sql/linux/quickstart-install-connect-ubuntu): paquete `mssql-server` y `sudo /opt/mssql/bin/mssql-conf setup` (elige la edicion *Developer* y una contrasena para `sa`). | `Server=localhost,1433;Database=Abastecimiento;User Id=sa;Password=<tu-contrasena>;TrustServerCertificate=True` |
+| macOS | SQL Server no se instala de forma nativa en macOS. Sin Docker, usa un SQL Server accesible por red (otro equipo, una VM Windows/Linux o Azure SQL). | La cadena de ese servidor. |
+
+**3. Configurar la conexion** (no aplica a LocalDB):
 ```bash
-cp .env.example .env            # ConnectionStrings__Abastecimiento apunta a localhost,14333
-docker compose up -d db         # o usar cualquier SQL Server y ajustar la cadena en .env
+cp .env.example .env            # Windows: copy .env.example .env
+```
+Edita `.env` y reemplaza el valor de `ConnectionStrings__Abastecimiento` por la cadena de la tabla anterior.
+Con **LocalDB** no crees el `.env` (o borra esa linea): si existe, su cadena apunta a `localhost,14333` (el SQL Server
+de Docker) y tiene prioridad sobre `appsettings.json`.
+
+**4. Levantar la API**
+```bash
 dotnet run --project src/Abastecimiento.Api --launch-profile http
 ```
-- Swagger: **http://localhost:5080/swagger**
-- La API lee el `.env` de la raiz al arrancar (sin pisar variables ya definidas). Sin `.env` usa la cadena LocalDB de
-  `appsettings.json`.
-- Si solo tienes un runtime mas nuevo (ej. .NET 10), antepone `DOTNET_ROLL_FORWARD=Major`.
-- Migraciones manuales (opcional; la API ya las aplica): `dotnet tool restore && dotnet ef database update --project src/Abastecimiento.Infraestructura --startup-project src/Abastecimiento.Api`.
+- Swagger: **http://localhost:5080/swagger** (con el perfil `http` el navegador se abre solo).
+- La primera vez restaura paquetes NuGet (requiere internet) y crea la base `Abastecimiento` con la semilla.
+- Detener: `Ctrl+C`.
+- La API busca el `.env` desde la carpeta donde ejecutas el comando hacia arriba: ejecutalo desde la raiz del repositorio.
+- Opcional (la API ya lo hace sola): `dotnet tool restore && dotnet ef database update --project src/Abastecimiento.Infraestructura --startup-project src/Abastecimiento.Api`.
 
-### Pruebas — un solo comando
+**5. Pruebas sin Docker**
+```bash
+dotnet test                     # unitarias (102); las de base de datos aparecen como omitidas
+```
+Todas, incluidas integracion y API, contra tu SQL Server (base aparte `Abastecimiento_Pruebas`):
+```bash
+# bash
+ABASTECIMIENTO_PRUEBAS_SQL="<tu cadena con Database=Abastecimiento_Pruebas>" dotnet test
+```
+```powershell
+# PowerShell
+$env:ABASTECIMIENTO_PRUEBAS_SQL = "<tu cadena con Database=Abastecimiento_Pruebas>"; dotnet test
+```
+
+### 1.4 Comprobar que funciona (ambas rutas)
+```bash
+curl -s http://localhost:8080/api/carga/5503          # Ruta B: puerto 5080
+```
+```powershell
+(Invoke-RestMethod http://localhost:8080/api/carga/5503).totalCarga     # Ruta B: puerto 5080
+```
+Debe devolver `totalCarga` **2966** (6 lineas: 819, 670, 482, 469, 288, 238), igual que la tabla del enunciado.
+
+### 1.5 Problemas comunes
+| Sintoma | Causa y solucion |
+|---|---|
+| `port is already allocated` (14333 u 8080) | Otro programa usa el puerto. SQL: `SQL_PUERTO=14334 docker compose up -d` (PowerShell: `$env:SQL_PUERTO=14334; docker compose up -d`) y ajusta el puerto en `.env` si usas `dotnet run`. API: libera el 8080. |
+| `db` no pasa a *healthy* / se reinicia | Poca memoria (SQL Server necesita 2 GB; en Docker Desktop: *Settings → Resources*) o contrasena debil: `MSSQL_SA_PASSWORD` necesita 8+ caracteres con mayusculas, minusculas, numeros y simbolos. Revisa `docker compose logs db`. |
+| La API reinicia en Docker al primer arranque | Espera: arranca en cuanto `db` esta *healthy* (`restart: on-failure`). |
+| `A network-related or instance-specific error` / `Login failed` | Cadena de conexion incorrecta o SQL Server apagado: revisa `ConnectionStrings__Abastecimiento` en `.env` (servidor, puerto, usuario, contrasena). |
+| `The certificate chain was issued by an authority that is not trusted` | Falta `TrustServerCertificate=True` en la cadena. |
+| `You must install or update .NET to run this application` / framework `8.0` no encontrado | Instala el SDK o runtime de .NET 8, o antepone `DOTNET_ROLL_FORWARD=Major` si solo tienes una version mas nueva. |
+| `LocalDB is not supported on this platform` | LocalDB solo existe en Windows: en Linux/macOS usa otra opcion de la tabla del paso 2 (o la Ruta A). |
+| Apple Silicon: `no matching manifest for linux/arm64` o SQL Server se cae | Activa Rosetta en Docker Desktop (ver tabla de instalacion de Docker). |
+| El front en el navegador recibe error de CORS | Agrega su origen: `Cors__OrigenesPermitidos__3=http://localhost:<puerto>` (ver "Consumir desde un front"). |
+
+### 1.6 Pruebas — un solo comando (requiere Docker)
 ```bash
 docker compose --profile pruebas run --rm pruebas
 ```
@@ -72,7 +169,7 @@ ya lo trae).
 | Integracion (SQL Server) | `Infraestructura/RepositoriosSqlServerPruebas.cs` | El arbol se lee en una sola SELECT; tienda con catalogos y espacios; filtro por regional |
 | API (SQL Server) | `Api/ApiPruebas.cs` | `GET /api/carga/5503` → 2,966; 404/400/409 en `problem+json`; crear tienda 201 + `Location`; consolidados; niveles, arbol, tiendas; Swagger |
 
-### Probar a mano
+### 1.7 Probar a mano
 ```bash
 curl -s http://localhost:8080/api/carga/5503                                   # desglose 5503 → totalCarga 2966
 curl -s "http://localhost:8080/api/reportes/consolidado?agruparPor=regional"   # BOGOTA / ANTIOQUIA
