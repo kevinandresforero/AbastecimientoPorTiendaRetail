@@ -905,3 +905,129 @@ h1:focus-visible {
     color: var(--color-advertencia-texto);
     margin: 0 0.75rem;
 }
+
+/* ---------- Tablas que caben completas en su contenedor (sin deslizador horizontal) ----------
+   La tabla toma el ancho del contenedor y el texto largo se parte en varias lineas; solo las cifras quedan en una
+   linea. Va al final para ganar a las reglas anteriores de cada tabla. */
+@media (min-width: 768px) {
+    .table-responsive {
+        overflow-x: visible;
+    }
+}
+
+.table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.table > :not(caption) > * > * {
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+.table thead th,
+.tabla-nodos thead th,
+.tabla-explorador thead th,
+.tabla-carga thead th,
+.arbol-nodos thead th {
+    white-space: normal;
+    vertical-align: bottom;
+    hyphens: auto;
+}
+
+/* Los encabezados numericos (alineados a la derecha) tambien pueden ocupar varias lineas; las cifras del cuerpo no. */
+.table thead th.text-end,
+.table thead th.col-justify-end {
+    white-space: normal;
+}
+
+/* QuickGrid corta los titulos con "..." en una sola linea; aqui se permiten varias lineas. */
+.table thead .col-title,
+.table thead .col-title-text {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.table .porcentaje-ruta,
+.detalle-celda {
+    white-space: normal;
+    min-width: 0;
+}
+
+.acciones-nodo {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.table .btn {
+    white-space: nowrap;
+}
+
+/* Barras de % mas cortas para dejar espacio a las columnas. */
+.barra-porcentaje {
+    width: 3rem;
+}
+
+@media (max-width: 1399.98px) {
+    .table > :not(caption) > * > *,
+    .tabla-carga > :not(caption) > * > *,
+    .arbol-nodos > :not(caption) > * > *,
+    .tabla-explorador > :not(caption) > * > *,
+    .tabla-nodos > :not(caption) > * > * {
+        padding: 0.55rem 0.5rem;
+    }
+
+    .panel .table > :not(caption) > * > *:first-child {
+        padding-left: 1rem;
+    }
+
+    .panel .table > :not(caption) > * > *:last-child {
+        padding-right: 1rem;
+    }
+
+    .table thead th {
+        font-size: 0.7rem;
+        letter-spacing: 0.02em;
+    }
+
+    .table tbody,
+    .table tfoot {
+        font-size: 0.9rem;
+    }
+
+    .barra-porcentaje {
+        display: none;
+    }
+
+    /* En tiendas el codigo y el nombre ya enlazan al detalle: la columna "Acciones" sobra en pantallas medianas. */
+    .tabla-tiendas > thead > tr > th:last-child,
+    .tabla-tiendas > tbody > tr > td:last-child {
+        display: none;
+    }
+
+    .panel .tabla-tiendas > :not(caption) > * > *:nth-last-child(2) {
+        padding-right: 1rem;
+    }
+
+    /* Botones de fila solo con icono; el nombre sigue disponible para lectores de pantalla. */
+    .table .texto-boton {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .table tbody,
+    .table tfoot {
+        font-size: 0.82rem;
+    }
+
+    .table .chip {
+        white-space: normal;
+    }
+}

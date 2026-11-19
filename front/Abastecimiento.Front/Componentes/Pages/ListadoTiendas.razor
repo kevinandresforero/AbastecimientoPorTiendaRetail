@@ -57,7 +57,7 @@ else if (tiendas is not null)
                         <span class="fw-bold">@Formato.Entero(tienda.EspaciosTotales)</span>
                     </TemplateColumn>
                     <TemplateColumn Title="Acciones" Align="Align.End" Context="tienda">
-                        <a class="btn btn-outline-primary btn-sm" href="@RutaDetalle(tienda)">Ver carga<span class="visually-hidden"> de @tienda.Nombre</span> <Icono Nombre="flecha" /></a>
+                        <a class="btn btn-outline-primary btn-sm" href="@RutaDetalle(tienda)" title="Ver carga de @tienda.Nombre"><span class="texto-boton">Ver carga</span><span class="visually-hidden"> de @tienda.Nombre</span> <Icono Nombre="flecha" /></a>
                     </TemplateColumn>
                 </QuickGrid>
             </div>
