@@ -11,7 +11,7 @@
 claude/
 .claude/
 
-# .mds (solo el README; los specs de agentes y notas internas no se versionan)
+# .mds
 *.md
 !README.md
 
