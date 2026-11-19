@@ -94,7 +94,11 @@ public static class DatosSemilla
         new() { Id = 15, NivelJerarquiaId = 7, Nombre = "BÁLSAMO LABIAL", UnidadesPorEspacio = 600 }
     ];
 
-    public static NodoComercial[] NodosComerciales =>
+    /// <summary>
+    /// Arbol de referencia del enunciado (tienda 5503, TiendaId 1, Ids 1–18). Las demas tiendas de la semilla reciben una
+    /// copia identica con Ids desplazados (ver <see cref="NodosComercialesDeTienda"/>).
+    /// </summary>
+    private static NodoComercial[] ArbolBase =>
     [
         new() { Id = 1, NodoPadreId = null, ConceptoComercialId = 1, PorcentajeParticipacion = 1.00m },   // BELLEZA Y BIENESTAR
         new() { Id = 2, NodoPadreId = 1, ConceptoComercialId = 2, PorcentajeParticipacion = 0.30m },      // BEAUTY
@@ -115,6 +119,37 @@ public static class DatosSemilla
         new() { Id = 17, NodoPadreId = 16, ConceptoComercialId = 7, PorcentajeParticipacion = 1.00m },    // LABIOS
         new() { Id = 18, NodoPadreId = 17, ConceptoComercialId = 15, PorcentajeParticipacion = 1.00m }    // BÁLSAMO LABIAL
     ];
+
+    /// <summary>Desplazamiento de Ids por tienda: 5503 → 0 (1–18), 1001 → 2000 (2001–2018), 2045 → 3000 (3001–3018).</summary>
+    private static readonly IReadOnlyDictionary<int, int> DesplazamientoIdsPorTienda =
+        new Dictionary<int, int> { [1] = 0, [2] = 2000, [3] = 3000 };
+
+    /// <summary>Los 54 nodos de la semilla: un arbol identico (18 nodos) por cada una de las 3 tiendas.</summary>
+    public static NodoComercial[] NodosComerciales =>
+        DesplazamientoIdsPorTienda.Keys.Order().SelectMany(NodosComercialesDeTienda).ToArray();
+
+    /// <summary>
+    /// Los 18 nodos de una tienda de la semilla: mismo concepto y porcentaje que el arbol base, con
+    /// <c>Id = desplazamiento + Id</c> y <c>NodoPadreId = desplazamiento + NodoPadreId</c> (raiz: null).
+    /// </summary>
+    public static NodoComercial[] NodosComercialesDeTienda(int tiendaId)
+    {
+        if (!DesplazamientoIdsPorTienda.TryGetValue(tiendaId, out var desplazamiento))
+        {
+            throw new ArgumentOutOfRangeException(nameof(tiendaId), tiendaId, "La semilla solo define arboles para las tiendas 1, 2 y 3.");
+        }
+
+        return ArbolBase
+            .Select(n => new NodoComercial
+            {
+                Id = desplazamiento + n.Id,
+                TiendaId = tiendaId,
+                NodoPadreId = n.NodoPadreId is int padre ? desplazamiento + padre : null,
+                ConceptoComercialId = n.ConceptoComercialId,
+                PorcentajeParticipacion = n.PorcentajeParticipacion
+            })
+            .ToArray();
+    }
 
     public static Rol[] Roles =>
     [

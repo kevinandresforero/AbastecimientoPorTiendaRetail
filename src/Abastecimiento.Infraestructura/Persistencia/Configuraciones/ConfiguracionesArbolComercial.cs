@@ -59,6 +59,16 @@ public class ConfiguracionNodoComercial : IEntityTypeConfiguration<NodoComercial
             .HasDatabaseName("UQ_NodosComerciales_NodoPadreId_ConceptoComercialId");
         builder.HasIndex(n => n.ConceptoComercialId).HasDatabaseName("IX_NodosComerciales_ConceptoComercialId");
 
+        // Arbol por tienda: lectura del arbol de una tienda por indice y unidades de negocio (raices) sin repetir en la tienda.
+        builder.HasIndex(n => n.TiendaId).HasDatabaseName("IX_NodosComerciales_TiendaId");
+        builder.HasIndex(n => new { n.TiendaId, n.ConceptoComercialId }).IsUnique()
+            .HasFilter("[NodoPadreId] IS NULL")
+            .HasDatabaseName("UQ_NodosComerciales_TiendaId_ConceptoComercialId_Raiz");
+
+        // Unica FK entre esquemas (nodoscomerciales -> tiendas): el arbol pertenece a una tienda.
+        builder.HasOne(n => n.Tienda).WithMany().HasForeignKey(n => n.TiendaId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_NodosComerciales_Tiendas_TiendaId");
         builder.HasOne(n => n.NodoPadre).WithMany(n => n.NodosHijos).HasForeignKey(n => n.NodoPadreId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(n => n.ConceptoComercial).WithMany().HasForeignKey(n => n.ConceptoComercialId).OnDelete(DeleteBehavior.Restrict);
 

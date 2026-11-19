@@ -131,6 +131,21 @@ internal sealed class ArbolComercialRepositorioFalso : IArbolComercialRepositori
 
     public Task<NodoComercial?> ObtenerNodoParaEditarAsync(int id, CancellationToken ct = default) =>
         Task.FromResult(nodos.SingleOrDefault(n => n.Id == id));
+
+    public Task<IReadOnlyList<NodoComercial>> ObtenerArbolPorTiendaAsync(int tiendaId, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<NodoComercial>>(nodos.Where(n => n.TiendaId == tiendaId).OrderBy(n => n.Id).ToList());
+
+    public Task<bool> ExisteNodoAsync(int tiendaId, int? nodoPadreId, int conceptoComercialId, CancellationToken ct = default) =>
+        Task.FromResult(nodos.Any(n =>
+            n.TiendaId == tiendaId && n.NodoPadreId == nodoPadreId && n.ConceptoComercialId == conceptoComercialId));
+
+    public async Task AgregarNodosAsync(IEnumerable<NodoComercial> nuevos, CancellationToken ct = default)
+    {
+        foreach (var nodo in nuevos)
+        {
+            await AgregarNodoAsync(nodo, ct);
+        }
+    }
 }
 
 internal sealed class UnidadDeTrabajoFalsa : IUnidadDeTrabajo

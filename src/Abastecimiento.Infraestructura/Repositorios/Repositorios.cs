@@ -98,6 +98,22 @@ public class ArbolComercialRepositorio(AbastecimientoDbContext contexto) : IArbo
         contexto.NodosComerciales
             .Include(n => n.ConceptoComercial).ThenInclude(c => c.NivelJerarquia)
             .FirstOrDefaultAsync(n => n.Id == id, ct);
+
+    /// <summary>Una sola SELECT filtrada por <c>IX_NodosComerciales_TiendaId</c>.</summary>
+    public async Task<IReadOnlyList<NodoComercial>> ObtenerArbolPorTiendaAsync(int tiendaId, CancellationToken ct = default) =>
+        await contexto.NodosComerciales
+            .AsNoTracking()
+            .Where(n => n.TiendaId == tiendaId)
+            .Include(n => n.ConceptoComercial).ThenInclude(c => c.NivelJerarquia)
+            .OrderBy(n => n.Id)
+            .ToListAsync(ct);
+
+    public Task<bool> ExisteNodoAsync(int tiendaId, int? nodoPadreId, int conceptoComercialId, CancellationToken ct = default) =>
+        contexto.NodosComerciales.AnyAsync(
+            n => n.TiendaId == tiendaId && n.NodoPadreId == nodoPadreId && n.ConceptoComercialId == conceptoComercialId, ct);
+
+    public Task AgregarNodosAsync(IEnumerable<NodoComercial> nodos, CancellationToken ct = default) =>
+        contexto.NodosComerciales.AddRangeAsync(nodos, ct);
 }
 
 public class CatalogoRepositorio<T>(AbastecimientoDbContext contexto) : ICatalogoRepositorio<T> where T : EntidadCatalogo
