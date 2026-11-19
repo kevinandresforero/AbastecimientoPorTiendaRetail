@@ -93,6 +93,13 @@ Datos semilla:
 Para recrear la base desde cero (por ejemplo tras tocar la semilla): `docker compose down -v` y
 `docker compose up -d --build`. El volumen `datos-sql` es el que conserva los datos entre `down` y `up`.
 
+### 2.1 Schema Nodos Comeriales
+<img width="1446" height="214" alt="image" src="https://github.com/user-attachments/assets/2ed49f33-8b1a-4e78-ae81-ebefdd528186" />
+
+### 2.2 Schema Tiendas
+<img width="1332" height="722" alt="image" src="https://github.com/user-attachments/assets/48de4724-8641-415e-b75b-bc170763ab9c" />
+
+
 ---
 
 ## 3. Probar la solución
