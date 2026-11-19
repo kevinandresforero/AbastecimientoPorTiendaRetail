@@ -31,9 +31,7 @@ else if (tienda is not null)
     <EncabezadoPagina Titulo="@tienda.Nombre" Antetitulo="@($"HANNA {tienda.CodigoHanna}")" Migas="Migas">
         <span class="chip">Marca: @tienda.MarcaTienda.Nombre</span>
         <span class="chip chip-neutro">Regional: @tienda.Regional.Nombre</span>
-        <span class="chip chip-neutro">Tipo: @tienda.TipoTienda.Nombre</span>
-        <span class="chip chip-neutro">Responsable visual: @(tienda.ResponsableVisual?.Nombre ?? "Sin asignar")</span>
-    </EncabezadoPagina>
+        <span class="chip chip-neutro">Tipo: @tienda.TipoTienda.Nombre</span>    </EncabezadoPagina>
 
     <section class="cifras" aria-label="Cifras de la tienda">
         <TarjetaCifra Etiqueta="Espacios totales" Valor="@Formato.Entero(tienda.EspaciosTotales)" Detalle="Mobiliario y perimetrales" NombreIcono="espacios" />

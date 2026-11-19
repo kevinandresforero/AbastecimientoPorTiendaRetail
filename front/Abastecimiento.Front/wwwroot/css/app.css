@@ -941,6 +941,15 @@ h1:focus-visible {
     white-space: normal;
 }
 
+/* En las columnas ordenables QuickGrid pinta el titulo como <button>, que toma el negro puro del navegador:
+   se hereda el color y la tipografia del encabezado. */
+.table thead button.col-title {
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+}
+
 /* QuickGrid corta los titulos con "..." en una sola linea; aqui se permiten varias lineas. */
 .table thead .col-title,
 .table thead .col-title-text {

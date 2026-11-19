@@ -19,7 +19,6 @@ public sealed class ClienteCatalogos(HttpClient http) : ClienteApiBase(http), IC
         TipoCatalogo.MarcasTienda => "api/catalogos/marcas-tienda",
         TipoCatalogo.Regionales => "api/catalogos/regionales",
         TipoCatalogo.TiposTienda => "api/catalogos/tipos-tienda",
-        TipoCatalogo.ResponsablesVisuales => "api/catalogos/responsables-visuales",
         _ => throw new ArgumentOutOfRangeException(nameof(tipo), tipo, "Catalogo desconocido.")
     };
 }

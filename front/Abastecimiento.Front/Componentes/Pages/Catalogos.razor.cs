@@ -10,7 +10,6 @@ public partial class Catalogos
         new("marcas", "Marcas de tienda", "marca de tienda", TipoCatalogo.MarcasTienda, 50),
         new("regionales", "Regionales", "regional", TipoCatalogo.Regionales, 50),
         new("tipos-tienda", "Tipos de tienda", "tipo de tienda", TipoCatalogo.TiposTienda, 50),
-        new("responsables", "Responsables visuales", "responsable visual", TipoCatalogo.ResponsablesVisuales, 100),
         new("tipos-espacio", "Tipos de espacio", "tipo de espacio", null, 50)
     ];
 

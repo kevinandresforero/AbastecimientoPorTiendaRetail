@@ -1,6 +1,6 @@
 namespace Abastecimiento.Front.Contratos;
 
-/// <summary>Elemento de un catalogo simple (marca de tienda, regional, tipo de tienda, responsable visual).</summary>
+/// <summary>Elemento de un catalogo simple (marca de tienda, regional, tipo de tienda).</summary>
 public sealed record CatalogoRespuesta(int Id, string Nombre);
 
 /// <summary>Cuerpo de <c>POST /api/catalogos/*</c>.</summary>

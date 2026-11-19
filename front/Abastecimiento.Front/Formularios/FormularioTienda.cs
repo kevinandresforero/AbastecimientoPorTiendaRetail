@@ -38,9 +38,6 @@ public sealed class FormularioTienda : IConTiposEspacio
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione el tipo de tienda.")]
     public int? TipoTiendaId { get; set; }
 
-    /// <summary>Responsable visual (opcional).</summary>
-    public int? ResponsableVisualId { get; set; }
-
     /// <summary>Filas de espacios (tipo + cantidad).</summary>
     [MinLength(1, ErrorMessage = "Agregue al menos un espacio.")]
     [FilasValidas]
@@ -64,7 +61,6 @@ public sealed class FormularioTienda : IConTiposEspacio
         MarcaTiendaId ?? 0,
         RegionalId ?? 0,
         TipoTiendaId ?? 0,
-        ResponsableVisualId,
         Espacios.Select(f => new EspacioSolicitud(f.TipoEspacioId ?? 0, f.CantidadEspacios ?? 0)).ToList());
 }
 

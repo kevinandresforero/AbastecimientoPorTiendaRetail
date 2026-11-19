@@ -18,7 +18,6 @@ public partial class NuevaTienda
     private IReadOnlyList<CatalogoRespuesta> marcas = [];
     private IReadOnlyList<CatalogoRespuesta> regionales = [];
     private IReadOnlyList<CatalogoRespuesta> tiposTienda = [];
-    private IReadOnlyList<CatalogoRespuesta> responsables = [];
     private IReadOnlyList<TipoEspacioRespuesta> tiposEspacio = [];
     private bool cargando = true;
     private bool enviando;
@@ -48,13 +47,11 @@ public partial class NuevaTienda
             var tareaMarcas = ClienteCatalogos.ListarAsync(TipoCatalogo.MarcasTienda, ct);
             var tareaRegionales = ClienteCatalogos.ListarAsync(TipoCatalogo.Regionales, ct);
             var tareaTipos = ClienteCatalogos.ListarAsync(TipoCatalogo.TiposTienda, ct);
-            var tareaResponsables = ClienteCatalogos.ListarAsync(TipoCatalogo.ResponsablesVisuales, ct);
             var tareaEspacios = ClienteTiposEspacio.ListarAsync(ct);
-            await Task.WhenAll(tareaMarcas, tareaRegionales, tareaTipos, tareaResponsables, tareaEspacios);
+            await Task.WhenAll(tareaMarcas, tareaRegionales, tareaTipos, tareaEspacios);
             marcas = await tareaMarcas;
             regionales = await tareaRegionales;
             tiposTienda = await tareaTipos;
-            responsables = await tareaResponsables;
             tiposEspacio = await tareaEspacios;
             formulario.TiposEspacio = tiposEspacio;
         });

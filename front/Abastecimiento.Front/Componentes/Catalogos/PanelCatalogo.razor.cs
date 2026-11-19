@@ -28,7 +28,7 @@ public partial class PanelCatalogo
     [Parameter]
     public string Singular { get; set; } = string.Empty;
 
-    /// <summary>Longitud maxima del nombre (50, o 100 para responsables visuales).</summary>
+    /// <summary>Longitud maxima del nombre que se muestra como ayuda (50).</summary>
     [Parameter]
     public int LongitudMaxima { get; set; } = 50;
 
@@ -44,8 +44,7 @@ public partial class PanelCatalogo
         await CargarAsync();
     }
 
-    private IFormularioNombre NuevoFormulario() =>
-        LongitudMaxima > 50 ? new FormularioResponsableVisual() : new FormularioCatalogo();
+    private static IFormularioNombre NuevoFormulario() => new FormularioCatalogo();
 
     private async Task CargarAsync()
     {

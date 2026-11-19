@@ -37,18 +37,14 @@ else if (errorCarga is null)
                                     <InputText id="nombre" class="form-control" @bind-Value="formulario.Nombre" placeholder="Ej. LILI EN YOI YAHAD TOBERIN" />
                                     <ValidationMessage For="() => formulario.Nombre" />
                                 </div>
-                                <div class="col-sm-6" id="campo-marca">
+                                <div class="col-sm-4" id="campo-marca">
                                     <SelectorCatalogo Id="marca" Etiqueta="Marca de tienda" Opciones="marcas" @bind-Value="formulario.MarcaTiendaId" />
                                 </div>
-                                <div class="col-sm-6" id="campo-regional">
+                                <div class="col-sm-4" id="campo-regional">
                                     <SelectorCatalogo Id="regional" Etiqueta="Regional" Opciones="regionales" @bind-Value="formulario.RegionalId" />
                                 </div>
-                                <div class="col-sm-6" id="campo-tipo">
+                                <div class="col-sm-4" id="campo-tipo">
                                     <SelectorCatalogo Id="tipo-tienda" Etiqueta="Tipo de tienda" Opciones="tiposTienda" @bind-Value="formulario.TipoTiendaId" />
-                                </div>
-                                <div class="col-sm-6" id="campo-responsable">
-                                    <SelectorCatalogo Id="responsable" Etiqueta="Responsable visual (opcional)" TextoVacio="Sin responsable"
-                                                      Opciones="responsables" @bind-Value="formulario.ResponsableVisualId" />
                                 </div>
                             </div>
                         </div>

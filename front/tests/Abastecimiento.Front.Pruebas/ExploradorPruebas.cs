@@ -13,7 +13,7 @@ public class ExploradorPruebas : TestContext
     private static readonly CatalogoRespuesta Antioquia = new(2, "ANTIOQUIA");
 
     private static TiendaRespuesta Tienda(int hanna, string nombre, CatalogoRespuesta regional, string marca) => new(
-        hanna, hanna, nombre, new CatalogoRespuesta(hanna, marca), regional, new CatalogoRespuesta(1, "CALLE"), null, [], 22);
+        hanna, hanna, nombre, new CatalogoRespuesta(hanna, marca), regional, new CatalogoRespuesta(1, "CALLE"), [], 22);
 
     private static readonly TiendaRespuesta T5503 = Tienda(5503, "LILI EN YOI YAHAD TOBERIN", Bogota, "YAHAD");
     private static readonly TiendaRespuesta T2045 = Tienda(2045, "YOI VIVA ENVIGADO", Antioquia, "YOI");

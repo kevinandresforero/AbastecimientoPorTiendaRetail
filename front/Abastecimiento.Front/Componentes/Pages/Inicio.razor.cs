@@ -14,7 +14,7 @@ public partial class Inicio
         new("Árbol comercial", "Los 7 niveles con su % de participación y las unidades por espacio.", "arbol", "arbol"),
         new("Explorador de cargas", "Carga de todas las tiendas en una tabla con búsqueda y filtros.", "explorador", "buscar"),
         new("Reportes","Consolidado de espacios y unidades por tienda, marca o regional.", "reportes", "reportes"),
-        new("Catálogos", "Marcas, regionales, tipos de tienda, responsables y tipos de espacio.", "catalogos", "catalogos")
+        new("Catálogos", "Marcas, regionales, tipos de tienda y tipos de espacio.", "catalogos", "catalogos")
     ];
 
     private readonly FormularioBusquedaHanna busqueda = new();

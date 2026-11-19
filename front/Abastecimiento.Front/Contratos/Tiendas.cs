@@ -8,7 +8,6 @@ public sealed record TiendaRespuesta(
     CatalogoRespuesta MarcaTienda,
     CatalogoRespuesta Regional,
     CatalogoRespuesta TipoTienda,
-    CatalogoRespuesta? ResponsableVisual,
     IReadOnlyList<EspacioTiendaRespuesta> Espacios,
     int EspaciosTotales);
 
@@ -22,7 +21,6 @@ public sealed record CrearTiendaSolicitud(
     int MarcaTiendaId,
     int RegionalId,
     int TipoTiendaId,
-    int? ResponsableVisualId,
     IReadOnlyList<EspacioSolicitud> Espacios);
 
 /// <summary>Espacios de un tipo al crear una tienda.</summary>

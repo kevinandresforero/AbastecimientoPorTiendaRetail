@@ -76,7 +76,7 @@ public class ClientesPruebas
         var cliente = new ClienteTiendas(ManejadorFalso.Cliente(manejador));
 
         var error = await Assert.ThrowsAsync<ExcepcionApi>(() => cliente.CrearAsync(
-            new CrearTiendaSolicitud(1, "", 1, 1, 1, null, [new EspacioSolicitud(1, -1)]), CancellationToken.None));
+            new CrearTiendaSolicitud(1, "", 1, 1, 1, [new EspacioSolicitud(1, -1)]), CancellationToken.None));
 
         Assert.Equal(400, error.Estado);
         Assert.Equal(["The Nombre field is required."], error.ErroresPorCampo["Nombre"]);

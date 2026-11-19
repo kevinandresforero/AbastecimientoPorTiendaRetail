@@ -10,8 +10,7 @@ public sealed class CatalogosFalsos : IClienteCatalogos
     {
         [TipoCatalogo.MarcasTienda] = [new(1, "LILI PINK"), new(2, "YOI")],
         [TipoCatalogo.Regionales] = [new(1, "BOGOTA")],
-        [TipoCatalogo.TiposTienda] = [new(1, "CALLE")],
-        [TipoCatalogo.ResponsablesVisuales] = [new(1, "ANA")]
+        [TipoCatalogo.TiposTienda] = [new(1, "CALLE")]
     };
 
     public Task<IReadOnlyList<CatalogoRespuesta>> ListarAsync(TipoCatalogo tipo, CancellationToken ct) =>
@@ -66,7 +65,7 @@ public sealed class TiendasFalsas : IClienteTiendas
 
         var catalogo = new CatalogoRespuesta(1, "X");
         return Task.FromResult(new TiendaRespuesta(
-            99, solicitud.CodigoHanna, solicitud.Nombre, catalogo, catalogo, catalogo, null, [],
+            99, solicitud.CodigoHanna, solicitud.Nombre, catalogo, catalogo, catalogo, [],
             solicitud.Espacios.Sum(e => e.CantidadEspacios)));
     }
 }

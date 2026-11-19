@@ -19,15 +19,6 @@ public sealed class FormularioCatalogo : IFormularioNombre
     public string? Nombre { get; set; }
 }
 
-/// <summary>Responsable visual (spec §6.2: maximo 100 caracteres).</summary>
-public sealed class FormularioResponsableVisual : IFormularioNombre
-{
-    /// <inheritdoc />
-    [Required(ErrorMessage = "Ingrese el nombre.")]
-    [StringLength(100, ErrorMessage = "El nombre admite máximo {1} caracteres.")]
-    public string? Nombre { get; set; }
-}
-
 /// <summary>Tipo de espacio: nombre (50) y categoria mobiliario o perimetral.</summary>
 public sealed class FormularioTipoEspacio
 {

@@ -12,13 +12,10 @@ public enum TipoCatalogo
     Regionales,
 
     /// <summary><c>tipos-tienda</c></summary>
-    TiposTienda,
-
-    /// <summary><c>responsables-visuales</c></summary>
-    ResponsablesVisuales
+    TiposTienda
 }
 
-/// <summary>Marcas de tienda, regionales, tipos de tienda y responsables visuales.</summary>
+/// <summary>Marcas de tienda, regionales y tipos de tienda.</summary>
 public interface IClienteCatalogos
 {
     /// <summary>GET <c>/api/catalogos/{tipo}</c>.</summary>
