@@ -11,11 +11,8 @@
 claude/
 .claude/
 
-# .mds
+# .mds (solo el README; los specs de agentes y notas internas no se versionan)
 *.md
-!agent_spec_capa_de_aplicacion_net_8.md
-!agent_spec_capa_de_datos_net_8.md
-!agent_spec_frontend_blazor_net_8.md
 !README.md
 
 # User-specific files
