@@ -1,0 +1,907 @@
+/* Layout y componentes visuales. Sin colores literales: solo var(--color-...), var(--sombra-...) y var(--radio-...). */
+
+/* ---------- Progreso y esqueleto de carga (explorador) ---------- */
+.barra-progreso {
+    height: 0.6rem;
+    border-radius: 999px;
+    background-color: var(--color-primario-suave);
+    overflow: hidden;
+}
+
+.barra-progreso > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--color-primario);
+    transition: width 0.3s ease;
+}
+
+.barra-progreso > span.indeterminado {
+    animation: progreso-indeterminado 1.2s ease-in-out infinite;
+}
+
+.esqueleto {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.esqueleto-fila {
+    display: flex;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--color-separador);
+}
+
+.esqueleto-fila > span {
+    display: block;
+    height: 0.85rem;
+    border-radius: 999px;
+    background-color: var(--color-fondo-alterno);
+    animation: esqueleto-pulso 1.4s ease-in-out infinite;
+}
+
+.esqueleto-fila:nth-child(2n) > span {
+    animation-delay: 0.2s;
+}
+
+@keyframes esqueleto-pulso {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+@keyframes progreso-indeterminado {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .esqueleto-fila > span,
+    .barra-progreso > span.indeterminado {
+        animation: none;
+    }
+}
+
+/* ---------- Selector de vista (Arbol | Tabla) ---------- */
+.selector-vista {
+    display: inline-flex;
+    padding: 0.2rem;
+    border-radius: var(--radio-sm);
+    background-color: var(--color-fondo);
+    border: 1px solid var(--color-borde-campo);
+}
+
+.selector-vista button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    color: var(--color-primario-oscuro);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.selector-vista button.activa {
+    background-color: var(--color-primario);
+    color: var(--color-superficie);
+}
+
+.tabla-nodos thead th {
+    white-space: nowrap;
+}
+
+.tabla-explorador thead th {
+    white-space: normal;
+    vertical-align: bottom;
+}
+
+.detalle-celda {
+    font-size: 0.8rem;
+    min-width: 9rem;
+}
+
+.tabla-explorador > :not(caption) > * > *,
+.tabla-nodos > :not(caption) > * > * {
+    padding: 0.6rem 0.7rem;
+}
+
+/* ---------- Estructura: barra lateral + contenido ---------- */
+.app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.barra-lateral {
+    background-color: var(--color-texto);
+    color: var(--color-fondo);
+    padding: 1rem 1.25rem;
+    position: relative;
+    z-index: 10;
+}
+
+.barra-lateral :focus-visible {
+    outline-color: var(--color-fondo);
+}
+
+.barra-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.marca-app,
+.marca-app:visited,
+.marca-app:hover {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--color-fondo);
+    text-decoration: none;
+}
+
+.marca-logo {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.75rem;
+    background-color: var(--color-destacado);
+    color: var(--color-texto);
+    flex-shrink: 0;
+}
+
+.marca-logo .icono {
+    width: 1.4rem;
+    height: 1.4rem;
+}
+
+.marca-texto strong {
+    display: block;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+}
+
+.marca-texto small {
+    display: block;
+    font-size: 0.78rem;
+}
+
+/* Menu plegable en pantallas chicas (sin JavaScript: checkbox + label). */
+.menu-movil-control {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.menu-movil-boton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--color-fondo);
+    border-radius: var(--radio-sm);
+    color: var(--color-fondo);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.menu-movil-control:focus-visible ~ .barra-cabecera .menu-movil-boton {
+    outline: 3px solid var(--color-fondo);
+    outline-offset: 2px;
+}
+
+.menu {
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-top: 1rem;
+}
+
+.menu-movil-control:checked ~ .menu {
+    display: flex;
+}
+
+.menu-grupo {
+    margin: 1rem 0 0.35rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-fondo);
+}
+
+.menu-enlace,
+.menu-enlace:visited {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radio-sm);
+    color: var(--color-fondo);
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.menu-enlace:hover {
+    background-color: var(--color-primario-oscuro);
+    color: var(--color-fondo);
+}
+
+.menu-enlace.active,
+.menu-enlace.active:visited {
+    background-color: var(--color-destacado);
+    color: var(--color-texto);
+    font-weight: 700;
+}
+
+.barra-pie {
+    display: none;
+    font-size: 0.78rem;
+    color: var(--color-fondo);
+    margin: 0;
+}
+
+.contenido {
+    flex: 1;
+    min-width: 0;
+    padding: 1.5rem 1rem 3rem;
+}
+
+.contenido-interno {
+    max-width: 82rem;
+    margin: 0 auto;
+}
+
+@media (min-width: 992px) {
+    .app {
+        flex-direction: row;
+    }
+
+    .barra-lateral {
+        width: 16.5rem;
+        flex-shrink: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem 1rem;
+    }
+
+    .menu-movil-boton {
+        display: none;
+    }
+
+    .menu {
+        display: flex;
+        flex: 1;
+    }
+
+    .barra-pie {
+        display: block;
+        padding: 0 0.75rem;
+    }
+
+    .contenido {
+        padding: 2rem 2.5rem 3.5rem;
+    }
+}
+
+/* ---------- Iconos ---------- */
+.icono {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+}
+
+/* ---------- Encabezado de pagina ---------- */
+.encabezado-pagina {
+    margin-bottom: 1.75rem;
+}
+
+.migas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.6rem;
+    font-size: 0.85rem;
+    color: var(--color-texto-secundario);
+}
+
+.migas li + li::before {
+    content: "›";
+    margin-right: 0.35rem;
+}
+
+.migas a {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.migas a:hover {
+    text-decoration: underline;
+}
+
+.encabezado-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.encabezado-antetitulo {
+    margin: 0 0 0.2rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-acento-oscuro);
+}
+
+.encabezado-pagina h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.encabezado-descripcion {
+    margin: 0.4rem 0 0;
+    max-width: 48rem;
+    color: var(--color-texto-secundario);
+}
+
+.encabezado-extra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.encabezado-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* El h1 recibe foco por programa al navegar (FocusOnNavigate) para lectores de pantalla; no es interactivo. */
+h1:focus,
+h1:focus-visible {
+    outline: none;
+}
+
+/* Cifras de tablas en una sola linea */
+.table .text-end,
+.porcentaje {
+    white-space: nowrap;
+}
+
+/* Tablas anchas (7 columnas en carga, 6 en el arbol): encabezados en dos lineas y celdas mas compactas. */
+.tabla-carga thead th,
+.arbol-nodos thead th {
+    white-space: normal;
+    vertical-align: bottom;
+}
+
+.tabla-carga > :not(caption) > * > *,
+.arbol-nodos > :not(caption) > * > * {
+    padding: 0.7rem 0.75rem;
+}
+
+.acciones-nodo {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+}
+
+.porcentaje-ruta {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* Dentro de un panel el titulo ya describe la tabla: el caption queda solo para lectores de pantalla. */
+.panel .tabla-carga caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Fila "Total general" del reporte (QuickGrid 8 no permite clases por fila). */
+.tabla-reporte tbody tr:has(.celda-total) > td {
+    background-color: var(--color-primario-suave);
+    box-shadow: none;
+    color: var(--color-texto);
+    font-weight: 700;
+}
+
+/* ---------- Hero de inicio ---------- */
+.hero {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    gap: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 1.75rem;
+    border-radius: var(--radio-lg);
+    background-color: var(--color-texto);
+    color: var(--color-fondo);
+    box-shadow: var(--sombra-2);
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    width: 22rem;
+    height: 22rem;
+    right: -7rem;
+    top: -9rem;
+    border-radius: 50%;
+    background-color: var(--color-primario);
+    pointer-events: none;
+}
+
+.hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-antetitulo {
+    color: var(--color-destacado);
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.hero h1 {
+    margin: 0 0 0.75rem;
+    color: var(--color-fondo);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+}
+
+.hero-texto p:last-child {
+    margin: 0;
+    max-width: 36rem;
+    font-size: 1.05rem;
+}
+
+.hero-busqueda {
+    align-self: center;
+    padding: 1.25rem;
+    border-radius: var(--radio);
+    background-color: var(--color-superficie);
+    color: var(--color-texto);
+    box-shadow: var(--sombra-2);
+}
+
+@media (min-width: 992px) {
+    .hero {
+        grid-template-columns: 1.4fr 1fr;
+        padding: 2.75rem;
+    }
+}
+
+/* ---------- Tarjetas de cifras (KPI) ---------- */
+.cifras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.tarjeta-cifra {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 1.15rem 1.25rem;
+    border: 1px solid var(--color-separador);
+    border-radius: var(--radio);
+    background-color: var(--color-superficie);
+    box-shadow: var(--sombra-1);
+}
+
+.tarjeta-cifra-icono {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.75rem;
+    background-color: var(--color-primario-suave);
+    color: var(--color-primario-oscuro);
+    flex-shrink: 0;
+}
+
+.tarjeta-cifra-etiqueta {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-texto-secundario);
+}
+
+.tarjeta-cifra-valor {
+    margin: 0.1rem 0 0;
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-primario-oscuro);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+
+.tarjeta-cifra-detalle {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: var(--color-texto-secundario);
+}
+
+.tarjeta-cifra.destacada {
+    background-color: var(--color-destacado);
+    border-color: var(--color-destacado);
+}
+
+.tarjeta-cifra.destacada .tarjeta-cifra-icono {
+    background-color: var(--color-texto);
+    color: var(--color-destacado);
+}
+
+.tarjeta-cifra.destacada .tarjeta-cifra-etiqueta,
+.tarjeta-cifra.destacada .tarjeta-cifra-valor,
+.tarjeta-cifra.destacada .tarjeta-cifra-detalle {
+    color: var(--color-texto);
+}
+
+/* ---------- Tarjetas de seccion (inicio) ---------- */
+.tarjeta-seccion,
+.tarjeta-seccion:visited {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    height: 100%;
+    padding: 1.4rem;
+    border: 1px solid var(--color-separador);
+    border-radius: var(--radio);
+    background-color: var(--color-superficie);
+    color: var(--color-texto);
+    text-decoration: none;
+    box-shadow: var(--sombra-1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tarjeta-seccion:hover {
+    color: var(--color-texto);
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-2);
+}
+
+.tarjeta-seccion h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.tarjeta-seccion p {
+    margin: 0;
+    flex: 1;
+    color: var(--color-texto-secundario);
+    font-size: 0.92rem;
+}
+
+.tarjeta-seccion-ir {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--color-primario-oscuro);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* ---------- Paneles (tarjetas con titulo) ---------- */
+.panel {
+    border: 1px solid var(--color-separador);
+    border-radius: var(--radio);
+    background-color: var(--color-superficie);
+    box-shadow: var(--sombra-1);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.panel-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--color-separador);
+}
+
+.panel-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.panel-titulo .icono {
+    color: var(--color-primario);
+}
+
+.panel-cuerpo {
+    padding: 1.5rem;
+}
+
+.panel .table-responsive,
+.panel .table {
+    margin-bottom: 0;
+}
+
+.panel .table > :not(caption) > * > *:first-child {
+    padding-left: 1.5rem;
+}
+
+.panel .table > :not(caption) > * > *:last-child {
+    padding-right: 1.5rem;
+}
+
+.seccion-formulario + .seccion-formulario {
+    margin-top: 1.75rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--color-separador);
+}
+
+.seccion-formulario-titulo {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* ---------- Chips ---------- */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    background-color: var(--color-primario-suave);
+    color: var(--color-primario-oscuro);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.chip-acento {
+    background-color: var(--color-acento-suave);
+    color: var(--color-acento-oscuro);
+}
+
+.chip-neutro {
+    background-color: var(--color-superficie);
+    color: var(--color-texto);
+    border: 1px solid var(--color-separador);
+}
+
+/* ---------- Barra de porcentaje ---------- */
+.porcentaje {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.barra-porcentaje {
+    width: 4.5rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background-color: var(--color-primario-suave);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.barra-porcentaje > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--color-primario);
+}
+
+/* ---------- Niveles del arbol (pasos numerados) ---------- */
+.lista-niveles {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-niveles li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0;
+}
+
+.lista-niveles li + li {
+    border-top: 1px dashed var(--color-separador);
+}
+
+.nivel-numero {
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background-color: var(--color-primario-suave);
+    color: var(--color-primario-oscuro);
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.lista-niveles.horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+}
+
+.lista-niveles.horizontal li {
+    padding: 0;
+}
+
+.lista-niveles.horizontal li + li {
+    border-top: 0;
+}
+
+.lista-niveles.horizontal li + li::before {
+    content: "›";
+    margin-right: 0.5rem;
+    color: var(--color-texto-secundario);
+}
+
+.lista-niveles .es-hoja .nivel-numero {
+    background-color: var(--color-primario);
+    color: var(--color-superficie);
+}
+
+/* ---------- Varios ---------- */
+.texto-secundario {
+    color: var(--color-texto-secundario);
+}
+
+.barra-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+    padding: 1.1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--color-separador);
+    border-radius: var(--radio);
+    background-color: var(--color-superficie);
+    box-shadow: var(--sombra-1);
+}
+
+.barra-filtros > div {
+    flex: 1 1 14rem;
+    max-width: 22rem;
+}
+
+.boton-alineado {
+    padding-top: 1.9rem;
+}
+
+.desglose summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.1rem 1.5rem;
+    color: var(--color-primario-oscuro);
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+}
+
+.desglose summary::-webkit-details-marker {
+    display: none;
+}
+
+.desglose summary::before {
+    content: "▸";
+    transition: transform 0.15s ease;
+}
+
+.desglose[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.desglose[open] summary {
+    border-bottom: 1px solid var(--color-separador);
+}
+
+.arbol-herramientas {
+    margin-bottom: 0.75rem;
+}
+
+.panel .arbol-herramientas {
+    margin: 0;
+    padding: 1rem 1.5rem;
+}
+
+.espaciador-rama {
+    display: inline-block;
+    width: 1rem;
+}
+
+.boton-rama {
+    width: 1.25rem;
+    text-decoration: none;
+}
+
+.celda-total {
+    font-weight: 700;
+}
+
+.celda-carga {
+    color: var(--color-primario-oscuro);
+}
+
+.resumen-validacion {
+    padding-left: 2rem;
+}
+
+.ayuda-porcentaje {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--radio-sm);
+    background-color: var(--color-fondo);
+}
+
+.resumen-lateral {
+    position: sticky;
+    top: 1.5rem;
+}
+
+.tabla-carga caption,
+.arbol-nodos caption {
+    padding: 0 1.5rem 0.75rem;
+    color: var(--color-texto-secundario);
+}
+
+.estado-vacio {
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    color: var(--color-texto-secundario);
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 0.75rem 1.25rem;
+    background-color: var(--color-advertencia-fondo);
+    color: var(--color-advertencia-texto);
+    border-top: 3px solid var(--color-advertencia-texto);
+}
+
+#blazor-error-ui .reload {
+    color: var(--color-advertencia-texto);
+    margin: 0 0.75rem;
+}

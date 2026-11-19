@@ -1,0 +1,173 @@
+@page "/explorador"
+@inherits PaginaBase
+
+<PageTitle>Explorador de cargas · Abastecimiento</PageTitle>
+
+<EncabezadoPagina Titulo="Explorador de cargas" Migas="Migas"
+                  Descripcion="La carga de todas las tiendas en una sola tabla. Busque y combine filtros: por ejemplo, las unidades de un tipo de producto en las tiendas de una regional." />
+
+<MensajeError Error="error" AlReintentar="CargarAsync" />
+
+@if (cargando)
+{
+    <section class="panel carga-progreso" aria-live="polite">
+        <div class="panel-cuerpo">
+            <p class="fw-bold mb-2">
+                @if (totalTiendas == 0)
+                {
+                    <span>Consultando tiendas y niveles del árbol…</span>
+                }
+                else
+                {
+                    <span>Calculando la carga de cada tienda: @tiendasListas de @totalTiendas</span>
+                }
+            </p>
+            <div class="barra-progreso" role="progressbar" aria-label="Progreso de carga"
+                 aria-valuemin="0" aria-valuemax="@totalTiendas" aria-valuenow="@tiendasListas">
+                <span class="@(totalTiendas == 0 ? "indeterminado" : null)" style="width: @AnchoProgreso"></span>
+            </div>
+        </div>
+        <div class="esqueleto" aria-hidden="true">
+            @for (var i = 0; i < 6; i++)
+            {
+                <div class="esqueleto-fila">
+                    <span style="width: 18%"></span><span style="width: 14%"></span><span style="width: 22%"></span>
+                    <span style="width: 12%"></span><span style="width: 10%"></span>
+                </div>
+            }
+        </div>
+    </section>
+}
+else if (error is null)
+{
+    @if (erroresTiendas.Count > 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            <p class="fw-bold mb-1">Advertencia: no se pudo calcular la carga de @erroresTiendas.Count tienda(s); la tabla no las incluye.</p>
+            <ul class="mb-2">
+                @foreach (var (tienda, fallo) in erroresTiendas)
+                {
+                    <li>HANNA @tienda.CodigoHanna — @tienda.Nombre: @fallo.Titulo</li>
+                }
+            </ul>
+            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="CargarAsync">Reintentar</button>
+        </div>
+    }
+
+    <section class="panel" aria-labelledby="titulo-filtros">
+        <div class="panel-cabecera">
+            <h2 class="panel-titulo" id="titulo-filtros"><Icono Nombre="buscar" /> Filtros</h2>
+            <button type="button" class="btn btn-outline-primary btn-sm" disabled="@(!filtro.TieneFiltros)" @onclick="LimpiarFiltros">Limpiar filtros</button>
+        </div>
+        <div class="panel-cuerpo">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="explorador-busqueda">Buscar</label>
+                    <input id="explorador-busqueda" type="search" class="form-control" autocomplete="off"
+                           placeholder="Tienda, código HANNA, regional, marca o producto (ej. labiales bogota)"
+                           @bind="filtro.Texto" @bind:event="oninput" @bind:after="Filtrar" />
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <label class="form-label" for="explorador-regional">Regional</label>
+                    <select id="explorador-regional" class="form-select" @bind="filtro.RegionalId" @bind:after="Filtrar">
+                        <option value="">Todas</option>
+                        @foreach (var opcion in regionales)
+                        {
+                            <option value="@opcion.Id">@opcion.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <label class="form-label" for="explorador-marca">Marca de tienda</label>
+                    <select id="explorador-marca" class="form-select" @bind="filtro.MarcaTiendaId" @bind:after="Filtrar">
+                        <option value="">Todas</option>
+                        @foreach (var opcion in marcas)
+                        {
+                            <option value="@opcion.Id">@opcion.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <label class="form-label" for="explorador-tienda">Tienda</label>
+                    <select id="explorador-tienda" class="form-select" @bind="filtro.CodigoHanna" @bind:after="Filtrar">
+                        <option value="">Todas</option>
+                        @foreach (var tienda in tiendas)
+                        {
+                            <option value="@tienda.CodigoHanna">@tienda.CodigoHanna — @tienda.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <label class="form-label" for="explorador-nivel">Nivel del árbol</label>
+                    <select id="explorador-nivel" class="form-select" @bind="filtro.Nivel" @bind:after="CambiarNivel">
+                        @foreach (var nivel in niveles)
+                        {
+                            <option value="@nivel.Nombre">@nivel.Profundidad. @nivel.Nombre@(nivel.EsHoja ? " (hoja)" : "")</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <label class="form-label" for="explorador-concepto">Concepto del nivel</label>
+                    <select id="explorador-concepto" class="form-select" @bind="filtro.Concepto" @bind:after="Filtrar">
+                        <option value="">Todos</option>
+                        @foreach (var concepto in conceptos)
+                        {
+                            <option value="@concepto">@concepto</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cifras" aria-label="Resumen de las filas filtradas" aria-live="polite">
+        <TarjetaCifra Etiqueta="Filas" Valor="@Formato.Entero(filtradas.Count)" Detalle="@($"de {Formato.Entero(todas.Count)} en total")" NombreIcono="catalogos" />
+        <TarjetaCifra Etiqueta="Tiendas" Valor="@Formato.Entero(TiendasFiltradas)" NombreIcono="tiendas" />
+        <TarjetaCifra Etiqueta="Espacios asignados" Valor="@Formato.Decimal4(EspaciosFiltrados)" Tooltip="@Formato.Completo(EspaciosFiltrados)"
+                      Detalle="Suma de las filas filtradas" NombreIcono="capas" />
+        <TarjetaCifra Etiqueta="Carga total" Valor="@Formato.Entero(CargaFiltrada)" Detalle="unidades de las filas filtradas" NombreIcono="carga" Destacada="true" />
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-resultados">
+        <div class="panel-cabecera">
+            <h2 class="panel-titulo" id="titulo-resultados"><Icono Nombre="reportes" /> Resultados</h2>
+            <span class="texto-secundario small">Haga clic en un encabezado para ordenar.</span>
+        </div>
+        @if (filtradas.Count == 0)
+        {
+            <p class="estado-vacio" role="status">Ninguna fila cumple los filtros. Pruebe con otra búsqueda o limpie los filtros.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <QuickGrid Items="FilasConsulta" Class="table table-striped table-hover align-middle tabla-explorador">
+                    <TemplateColumn Title="Tienda" Context="fila" SortBy="PorTienda" Sortable="true">
+                        <a href="@($"tiendas/{fila.Tienda.CodigoHanna}")">@fila.Tienda.CodigoHanna</a>
+                        <span class="d-block detalle-celda texto-secundario">@fila.Tienda.Nombre</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Regional / marca" Context="fila" SortBy="PorRegional" Sortable="true">
+                        <span class="d-block">@fila.Tienda.Regional.Nombre</span>
+                        <span class="chip mt-1">@fila.Tienda.MarcaTienda.Nombre</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Tipo de producto" Context="fila" SortBy="PorTipo" Sortable="true">
+                        <span class="d-block fw-bold">@fila.Linea.TipoProducto</span>
+                        <span class="d-block detalle-celda texto-secundario">
+                            @(fila.MarcaProducto?.Nombre ?? "—") › @(fila.Perfil?.Nombre ?? "—")
+                            @if (fila.Hoja is not null)
+                            {
+                                @(" ")<span class="text-nowrap" title="@Formato.PorcentajeCompleto(fila.Hoja.PorcentajeParticipacion)">· @Formato.Porcentaje(fila.Hoja.PorcentajeParticipacion)</span>
+                            }
+                        </span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Espacios" Align="Align.End" Context="fila" SortBy="PorEspacios" Sortable="true">
+                        <span title="@Formato.Completo(fila.Linea.EspaciosCalculados)">@Formato.Decimal4(fila.Linea.EspaciosCalculados)</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Unid. / espacio" Align="Align.End" Context="fila" SortBy="PorUnidades" Sortable="true">@Formato.Entero(fila.Linea.UnidadesPorEspacio)</TemplateColumn>
+                    <TemplateColumn Title="Carga total" Align="Align.End" Context="fila" SortBy="PorCarga" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending">
+                        <span class="fw-bold celda-carga">@Formato.Entero(fila.Linea.CargaTotal)</span>
+                    </TemplateColumn>
+                </QuickGrid>
+            </div>
+        }
+    </section>
+}

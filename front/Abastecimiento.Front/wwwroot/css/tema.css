@@ -1,0 +1,400 @@
+/*
+ * Tema de la aplicacion (spec frontend §7). Unico lugar con valores de color: el resto del CSS y los componentes usan
+ * var(--color-...), var(--sombra-...) y var(--radio-...).
+ * Paleta base: #F2B705 (ambar), #F2F2F2 (fondo), #252623 (texto), #6663A6 (morado) y #D9078F (magenta). Los tonos
+ * -oscuro y -suave derivan de ellos. Reglas: sin blanco puro, sin negro puro y sin verdes.
+ * Contraste (WCAG 2.1 AA): todo texto >= 4.5:1 y toda UI/foco >= 3:1 contra su fondo. Cada par usado esta en la tabla
+ * §7.2 del spec y lo verifica la prueba ContrasteTemaPruebas.
+ */
+:root {
+    /* Tokens de color */
+    --color-primario: #6663A6;          /* morado de la paleta: botones, barras de %, numeros de nivel */
+    --color-primario-oscuro: #4A4785;   /* enlaces, texto morado, hover del primario */
+    --color-primario-suave: #E4E3F1;    /* encabezados de tabla, chips, fila seleccionada, totales */
+    --color-fondo: #F2F2F2;             /* fondo de la aplicacion */
+    --color-fondo-alterno: #E8E8E6;     /* hover de filas */
+    --color-superficie: #FBFBFA;        /* tarjetas, campos, modales (casi blanco, nunca blanco puro) */
+    --color-texto: #252623;             /* texto por defecto y barra lateral (casi negro, nunca negro puro) */
+    --color-texto-secundario: #555650;
+    --color-acento: #D9078F;            /* magenta de la paleta: boton secundario */
+    --color-acento-oscuro: #A8066E;     /* magenta como texto y hover del secundario */
+    --color-acento-suave: #FADDEC;      /* chips magenta (perimetral, nivel hoja) */
+    --color-destacado: #F2B705;         /* ambar de la paleta: cifra principal, menu activo, marca */
+    --color-destacado-suave: #FCEFC4;
+    --color-borde-campo: #767772;
+    --color-separador: #E0E0DC; /* Solo decorativo (lineas entre filas y tarjetas): no transmite informacion. */
+    --color-foco: #D9078F;
+    --color-exito-texto: #4A4785;
+    --color-exito-fondo: #E4E3F1;
+    --color-advertencia-texto: #5C4300;
+    --color-advertencia-fondo: #FCEFC4;
+    --color-error-texto: #A8066E;
+    --color-error-fondo: #FADDEC;
+    --color-info-texto: #252623;
+    --color-info-fondo: #E6E6E3;
+    --color-deshabilitado-texto: #5E5F5A;
+    --color-deshabilitado-fondo: #E3E3E0;
+    --color-placeholder: #62635E;
+
+    /* Sombras (decorativas, derivadas de --color-texto) y radios */
+    --sombra-1: 0 1px 2px rgb(37 38 35 / 0.06), 0 1px 3px rgb(37 38 35 / 0.08);
+    --sombra-2: 0 12px 32px -16px rgb(37 38 35 / 0.3), 0 2px 6px rgb(37 38 35 / 0.06);
+    --sombra-modal: 0 24px 64px -24px rgb(37 38 35 / 0.45);
+    --radio-sm: 0.5rem;
+    --radio: 0.875rem;
+    --radio-lg: 1.25rem;
+
+    /* Variables de Bootstrap 5.3 a partir de los tokens. Las variantes -rgb repiten los mismos colores en tripleta
+       (Bootstrap las necesita para rgba()); se usan siempre con opacidad 1. */
+    --bs-body-bg: var(--color-fondo);
+    --bs-body-color: var(--color-texto);
+    --bs-body-font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --bs-emphasis-color: var(--color-texto);
+    --bs-secondary-color: var(--color-texto-secundario);
+    --bs-secondary-bg: var(--color-deshabilitado-fondo);
+    --bs-tertiary-bg: var(--color-fondo-alterno);
+    --bs-white: var(--color-superficie);
+    --bs-white-rgb: 251, 251, 250;
+    --bs-black: var(--color-texto);
+    --bs-black-rgb: 37, 38, 35;
+    --bs-body-color-rgb: 37, 38, 35;
+    --bs-body-bg-rgb: 242, 242, 242;
+    --bs-primary: var(--color-primario);
+    --bs-primary-rgb: 102, 99, 166;
+    --bs-link-color: var(--color-primario-oscuro);
+    --bs-link-color-rgb: 74, 71, 133;
+    --bs-link-hover-color: var(--color-texto);
+    --bs-link-hover-color-rgb: 37, 38, 35;
+    --bs-border-color: var(--color-borde-campo);
+    --bs-border-radius: var(--radio-sm);
+    --bs-focus-ring-color: var(--color-foco);
+    --bs-focus-ring-opacity: 1;
+    --bs-heading-color: var(--color-texto);
+    --bs-code-color: var(--color-acento-oscuro);
+}
+
+body {
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: var(--bs-body-font-family);
+    -webkit-font-smoothing: antialiased;
+}
+
+a:visited {
+    color: var(--color-primario-oscuro);
+}
+
+/* Foco visible con teclado en todo elemento interactivo (>= 3:1 contra el fondo). */
+:focus-visible {
+    outline: 3px solid var(--color-foco);
+    outline-offset: 2px;
+}
+
+.btn:focus-visible,
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus,
+.nav-link:focus-visible {
+    outline: 3px solid var(--color-foco);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--color-foco);
+}
+
+/* Botones */
+.btn {
+    --bs-btn-disabled-opacity: 1;
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: var(--radio-sm);
+    --bs-btn-padding-x: 1rem;
+    --bs-btn-padding-y: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+}
+
+.table a:not(.btn) {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.table a:not(.btn):hover {
+    text-decoration: underline;
+}
+
+.btn-sm {
+    --bs-btn-padding-x: 0.65rem;
+    --bs-btn-padding-y: 0.3rem;
+    --bs-btn-border-radius: 0.4rem;
+}
+
+.btn-primary {
+    --bs-btn-color: var(--color-superficie);
+    --bs-btn-bg: var(--color-primario);
+    --bs-btn-border-color: var(--color-primario);
+    --bs-btn-hover-color: var(--color-superficie);
+    --bs-btn-hover-bg: var(--color-primario-oscuro);
+    --bs-btn-hover-border-color: var(--color-primario-oscuro);
+    --bs-btn-active-color: var(--color-superficie);
+    --bs-btn-active-bg: var(--color-primario-oscuro);
+    --bs-btn-active-border-color: var(--color-primario-oscuro);
+    --bs-btn-disabled-color: var(--color-deshabilitado-texto);
+    --bs-btn-disabled-bg: var(--color-deshabilitado-fondo);
+    --bs-btn-disabled-border-color: var(--color-deshabilitado-fondo);
+    box-shadow: var(--sombra-1);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--color-primario-oscuro);
+    --bs-btn-bg: var(--color-superficie);
+    --bs-btn-border-color: var(--color-primario);
+    --bs-btn-hover-color: var(--color-superficie);
+    --bs-btn-hover-bg: var(--color-primario);
+    --bs-btn-hover-border-color: var(--color-primario);
+    --bs-btn-active-color: var(--color-superficie);
+    --bs-btn-active-bg: var(--color-primario-oscuro);
+    --bs-btn-active-border-color: var(--color-primario-oscuro);
+    --bs-btn-disabled-color: var(--color-deshabilitado-texto);
+    --bs-btn-disabled-bg: var(--color-deshabilitado-fondo);
+    --bs-btn-disabled-border-color: var(--color-deshabilitado-fondo);
+}
+
+.btn-secondary {
+    --bs-btn-color: var(--color-superficie);
+    --bs-btn-bg: var(--color-acento);
+    --bs-btn-border-color: var(--color-acento);
+    --bs-btn-hover-color: var(--color-superficie);
+    --bs-btn-hover-bg: var(--color-acento-oscuro);
+    --bs-btn-hover-border-color: var(--color-texto);
+    --bs-btn-active-color: var(--color-superficie);
+    --bs-btn-active-bg: var(--color-acento-oscuro);
+    --bs-btn-active-border-color: var(--color-texto);
+    --bs-btn-disabled-color: var(--color-deshabilitado-texto);
+    --bs-btn-disabled-bg: var(--color-deshabilitado-fondo);
+    --bs-btn-disabled-border-color: var(--color-deshabilitado-fondo);
+    box-shadow: var(--sombra-1);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--color-acento-oscuro);
+    --bs-btn-bg: var(--color-superficie);
+    --bs-btn-border-color: var(--color-acento);
+    --bs-btn-hover-color: var(--color-superficie);
+    --bs-btn-hover-bg: var(--color-acento-oscuro);
+    --bs-btn-hover-border-color: var(--color-acento-oscuro);
+    --bs-btn-active-color: var(--color-superficie);
+    --bs-btn-active-bg: var(--color-acento-oscuro);
+    --bs-btn-active-border-color: var(--color-acento-oscuro);
+    --bs-btn-disabled-color: var(--color-deshabilitado-texto);
+    --bs-btn-disabled-bg: var(--color-deshabilitado-fondo);
+    --bs-btn-disabled-border-color: var(--color-deshabilitado-fondo);
+}
+
+.btn-link {
+    --bs-btn-color: var(--color-primario-oscuro);
+    --bs-btn-hover-color: var(--color-primario-oscuro);
+    --bs-btn-active-color: var(--color-primario-oscuro);
+    box-shadow: none;
+}
+
+/* Campos */
+.form-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.35rem;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+    border-color: var(--color-borde-campo);
+    border-radius: var(--radio-sm);
+}
+
+.form-control,
+.form-select {
+    background-color: var(--color-superficie);
+    color: var(--color-texto);
+    padding: 0.55rem 0.8rem;
+}
+
+.form-select {
+    padding-right: 2.25rem;
+}
+
+.input-group-text {
+    background-color: var(--color-fondo-alterno);
+    color: var(--color-texto);
+    font-weight: 600;
+}
+
+.form-control::placeholder {
+    color: var(--color-placeholder);
+    opacity: 1;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--color-deshabilitado-fondo);
+    color: var(--color-deshabilitado-texto);
+    opacity: 1;
+}
+
+.form-text {
+    color: var(--color-texto-secundario);
+}
+
+.invalid {
+    border-color: var(--color-error-texto);
+}
+
+.validation-message {
+    color: var(--color-error-texto);
+    font-size: 0.875rem;
+    margin-top: 0.3rem;
+}
+
+/* Tablas: encabezado claro, filas alternas crema y separadores suaves */
+.table {
+    --bs-table-color: var(--color-texto);
+    --bs-table-bg: var(--color-superficie);
+    --bs-table-border-color: var(--color-separador);
+    --bs-table-striped-color: var(--color-texto);
+    --bs-table-striped-bg: var(--color-fondo);
+    --bs-table-hover-color: var(--color-texto);
+    --bs-table-hover-bg: var(--color-fondo-alterno);
+    --bs-table-active-color: var(--color-texto);
+    --bs-table-active-bg: var(--color-primario-suave);
+    font-variant-numeric: tabular-nums;
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.75rem 1rem;
+}
+
+.table > thead {
+    --bs-table-color: var(--color-primario-oscuro);
+    --bs-table-bg: var(--color-primario-suave);
+}
+
+.table > thead th {
+    color: var(--color-primario-oscuro);
+    background-color: var(--color-primario-suave);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-bottom: 0;
+    white-space: nowrap;
+}
+
+.table > tfoot,
+.table .fila-total {
+    --bs-table-color: var(--color-texto);
+    --bs-table-bg: var(--color-primario-suave);
+}
+
+.table > tfoot > tr > * {
+    font-weight: 700;
+    border-bottom: 0;
+}
+
+/* Alertas: fondo suave y franja lateral del color del texto */
+.alert {
+    --bs-alert-border-radius: var(--radio);
+    border-width: 0 0 0 4px;
+}
+
+.alert-success {
+    --bs-alert-color: var(--color-exito-texto);
+    --bs-alert-bg: var(--color-exito-fondo);
+    --bs-alert-border-color: var(--color-exito-texto);
+    --bs-alert-link-color: var(--color-exito-texto);
+}
+
+.alert-warning {
+    --bs-alert-color: var(--color-advertencia-texto);
+    --bs-alert-bg: var(--color-advertencia-fondo);
+    --bs-alert-border-color: var(--color-advertencia-texto);
+    --bs-alert-link-color: var(--color-advertencia-texto);
+}
+
+.alert-danger {
+    --bs-alert-color: var(--color-error-texto);
+    --bs-alert-bg: var(--color-error-fondo);
+    --bs-alert-border-color: var(--color-error-texto);
+    --bs-alert-link-color: var(--color-error-texto);
+}
+
+.alert-info {
+    --bs-alert-color: var(--color-info-texto);
+    --bs-alert-bg: var(--color-info-fondo);
+    --bs-alert-border-color: var(--color-info-texto);
+    --bs-alert-link-color: var(--color-info-texto);
+}
+
+/* Tarjetas y modales */
+.card {
+    --bs-card-bg: var(--color-superficie);
+    --bs-card-color: var(--color-texto);
+    --bs-card-border-color: var(--color-separador);
+    --bs-card-border-radius: var(--radio);
+    --bs-card-inner-border-radius: var(--radio);
+    --bs-card-spacer-x: 1.5rem;
+    --bs-card-spacer-y: 1.5rem;
+    box-shadow: var(--sombra-1);
+}
+
+.modal {
+    --bs-modal-bg: var(--color-superficie);
+    --bs-modal-color: var(--color-texto);
+    --bs-modal-border-color: var(--color-separador);
+    --bs-modal-border-radius: var(--radio-lg);
+    --bs-modal-header-border-color: var(--color-separador);
+    --bs-modal-padding: 1.5rem;
+}
+
+.modal-content {
+    box-shadow: var(--sombra-modal);
+}
+
+.modal-backdrop {
+    --bs-backdrop-bg: var(--color-texto);
+    --bs-backdrop-opacity: 0.55;
+}
+
+/* Pestañas como control segmentado */
+.nav-tabs {
+    --bs-nav-tabs-border-width: 0;
+    --bs-nav-link-color: var(--color-primario-oscuro);
+    --bs-nav-link-hover-color: var(--color-primario-oscuro);
+    gap: 0.35rem;
+    padding: 0.35rem;
+    background-color: var(--color-superficie);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-1);
+    display: inline-flex;
+    flex-wrap: wrap;
+}
+
+.nav-tabs .nav-link {
+    border-radius: var(--radio-sm);
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: var(--color-primario-suave);
+    color: var(--color-primario-oscuro);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--color-primario);
+    color: var(--color-superficie);
+}

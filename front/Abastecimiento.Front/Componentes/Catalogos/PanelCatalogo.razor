@@ -1,0 +1,72 @@
+@inherits PaginaBase
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <section class="panel" aria-labelledby="@($"titulo-{IdCampo}")">
+            <div class="panel-cabecera">
+                <h2 class="panel-titulo" id="@($"titulo-{IdCampo}")"><Icono Nombre="catalogos" /> @Titulo</h2>
+                @if (!cargando && errorCarga is null)
+                {
+                    <span class="chip">@Formato.Entero(elementos.Count) registros</span>
+                }
+            </div>
+            @if (cargando)
+            {
+                <div class="panel-cuerpo"><Cargando /></div>
+            }
+            else if (errorCarga is not null)
+            {
+                <div class="panel-cuerpo"><MensajeError Error="errorCarga" AlReintentar="CargarAsync" /></div>
+            }
+            else if (elementos.Count == 0)
+            {
+                <p class="estado-vacio" role="status">Aún no hay elementos.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle tabla-catalogo">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-end">Id</th>
+                                <th scope="col">Nombre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var elemento in elementos)
+                            {
+                                <tr @key="elemento.Id" class="@(elemento.Id == creado?.Id ? "table-active" : null)">
+                                    <td class="text-end texto-secundario">@elemento.Id</td>
+                                    <td>@elemento.Nombre</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="panel" aria-labelledby="@($"alta-{IdCampo}")">
+            <div class="panel-cabecera">
+                <h3 class="panel-titulo" id="@($"alta-{IdCampo}")"><Icono Nombre="mas" /> Agregar @Singular</h3>
+            </div>
+            <div class="panel-cuerpo">
+                @if (creado is not null)
+                {
+                    <div class="alert alert-success" role="status">Creado: @creado.Nombre.</div>
+                }
+                <EditForm Model="formulario" OnValidSubmit="GuardarAsync">
+                    <DataAnnotationsValidator />
+                    <ResumenErroresApi Error="errorEnvio" CampoConflicto="Nombre" />
+                    <ValidationSummary class="alert alert-danger resumen-validacion" />
+                    <label class="form-label" for="@IdCampo">Nombre</label>
+                    <InputText id="@IdCampo" class="form-control" @bind-Value="formulario.Nombre" />
+                    <ValidationMessage For="() => formulario.Nombre" />
+                    <p class="form-text">Máximo @LongitudMaxima caracteres.</p>
+                    <button type="submit" class="btn btn-primary w-100" disabled="@enviando">@(enviando ? "Guardando…" : "Agregar")</button>
+                </EditForm>
+            </div>
+        </section>
+    </div>
+</div>

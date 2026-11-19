@@ -1,9 +1,11 @@
-# Un contenedor por servicio, orquestados juntos:  docker compose up -d --build
-#   db  -> SQL Server 2022 (localhost:14333)
-#   api -> ASP.NET Core 8 (http://localhost:8080); aplica las migraciones y la semilla al arrancar
-#   front -> se agregara como tercer servicio cuando exista (origen http://localhost:3000, ya permitido por CORS)
-#   pruebas -> (perfil "pruebas") ejecuta TODAS las pruebas con .NET 8 contra el SQL Server del compose:
+# Un contenedor por servicio, orquestados juntos (un solo comando levanta los tres):  docker compose up -d --build
+#   db    -> SQL Server 2022 (localhost:14333)
+#   api   -> ASP.NET Core 8 (http://localhost:8080); aplica las migraciones y la semilla al arrancar
+#   front -> Blazor Web App .NET 8 (http://localhost:3000); consume la API por HTTP (servidor a servidor, sin CORS)
+#   pruebas -> (perfil "pruebas") ejecuta TODAS las pruebas (backend y front) con .NET 8:
 #              docker compose --profile pruebas run --rm pruebas
+#
+# Redes: "datos" une db y api; "web" une api y front. El front solo ve a la API: no puede alcanzar la base de datos.
 
 services:
   db:
@@ -16,6 +18,8 @@ services:
       - "${SQL_PUERTO:-14333}:1433"
     volumes:
       - datos-sql:/var/opt/mssql
+    networks:
+      - datos
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1"]
       interval: 10s
@@ -36,9 +40,28 @@ services:
       ConnectionStrings__Abastecimiento: "Server=db,1433;Database=Abastecimiento;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Abastecimiento#2026};TrustServerCertificate=True"
     ports:
       - "8080:8080"
+    networks:
+      - datos
+      - web
     restart: on-failure
 
-  # Solo con el perfil "pruebas": unitarias + integracion (repositorios y API) en la BD Abastecimiento_Pruebas.
+  front:
+    build:
+      context: .
+      dockerfile: front/Dockerfile
+    container_name: abastecimiento-front
+    depends_on:
+      - api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Api__UrlBase: "http://api:8080"
+    ports:
+      - "3000:8080"
+    networks:
+      - web
+    restart: on-failure
+
+  # Solo con el perfil "pruebas": backend (unitarias + integracion en la BD Abastecimiento_Pruebas) y luego el front.
   # El repo se monta solo lectura y se copia sin .git, .claude, bin, obj ni .env para compilar limpio.
   pruebas:
     image: mcr.microsoft.com/dotnet/sdk:8.0
@@ -53,6 +76,8 @@ services:
     volumes:
       - .:/src:ro
       - nuget-cache:/root/.nuget/packages
+    networks:
+      - datos
     command:
       - bash
       - -c
@@ -60,12 +85,12 @@ services:
         mkdir -p /tmp/build &&
         tar -C /src --exclude=./.git --exclude=./.claude --exclude=./.env --exclude='*/bin' --exclude='*/obj' -cf - . | tar -C /tmp/build -xf - &&
         cd /tmp/build &&
-        dotnet test Abastecimiento.sln --logger "console;verbosity=normal"
+        dotnet test Abastecimiento.sln --logger "console;verbosity=normal" &&
+        dotnet test front/Abastecimiento.Front.sln --logger "console;verbosity=normal"
 
-  # front:
-  #   build: ./front
-  #   depends_on: [api]
-  #   ports: ["3000:80"]
+networks:
+  datos:
+  web:
 
 volumes:
   datos-sql:

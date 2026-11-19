@@ -1,0 +1,83 @@
+@page "/reportes"
+@inherits PaginaBase
+
+<PageTitle>Reportes · Abastecimiento</PageTitle>
+
+<EncabezadoPagina Titulo="Reportes consolidados" Migas="Migas"
+                  Descripcion="Espacios y unidades agrupados por tienda, marca de tienda, regional o por un nivel del árbol (por ejemplo, marca de producto)." />
+
+<EditForm Model="formulario" OnValidSubmit="ConsultarAsync" class="barra-filtros">
+    <DataAnnotationsValidator />
+    <div>
+        <label class="form-label" for="agrupar-por">Agrupar por</label>
+        <InputSelect id="agrupar-por" class="form-select" @bind-Value="formulario.AgruparPor" @bind-Value:after="CambiarAgrupacionAsync">
+            @foreach (var opcion in OpcionesAgrupacion)
+            {
+                <option value="@opcion">@Textos.AgruparPor(opcion)</option>
+            }
+        </InputSelect>
+    </div>
+    <div>
+        <SelectorCatalogo Id="nivel-reporte" Etiqueta="Nivel del árbol" Opciones="opcionesNivel"
+                          Deshabilitado="@(formulario.AgruparPor != AgruparPor.Nivel)"
+                          @bind-Value="formulario.NivelId" @bind-Value:after="CambiarNivelAsync" />
+    </div>
+    <div class="flex-grow-0">
+        <button type="submit" class="btn btn-primary" disabled="@cargando"><Icono Nombre="reportes" /> Consultar</button>
+    </div>
+</EditForm>
+
+<MensajeError Error="error" AlReintentar="ConsultarAsync" />
+
+@if (cargando)
+{
+    <Cargando Texto="Consultando…" />
+}
+else if (consolidado is not null)
+{
+    <section class="cifras" aria-label="Totales del consolidado">
+        <TarjetaCifra Etiqueta="Tiendas" Valor="@Formato.Entero(consolidado.Total.CantidadTiendas)" NombreIcono="tiendas" />
+        <TarjetaCifra Etiqueta="Grupos" Valor="@Formato.Entero(consolidado.Grupos.Count)" Detalle="@TituloResultado" NombreIcono="catalogos" />
+        <TarjetaCifra Etiqueta="Espacios asignados" Valor="@Formato.Decimal4(consolidado.Total.EspaciosAsignados)"
+                      Tooltip="@Formato.Completo(consolidado.Total.EspaciosAsignados)" NombreIcono="capas" />
+        <TarjetaCifra Etiqueta="Carga total" Valor="@Formato.Entero(consolidado.Total.CargaTotal)" Detalle="unidades" NombreIcono="carga" Destacada="true" />
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-resultado">
+        <div class="panel-cabecera">
+            <h2 class="panel-titulo" id="titulo-resultado"><Icono Nombre="reportes" /> @TituloResultado</h2>
+        </div>
+        @if (consolidado.Grupos.Count == 0)
+        {
+            <p class="estado-vacio" role="status">No hay datos para este criterio.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <QuickGrid Items="FilasConsulta" Class="table table-striped align-middle tabla-reporte">
+                    <TemplateColumn Title="Clave" Context="fila">
+                        <span class="@ClaseCelda(fila)">@fila.Grupo.Clave</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Nombre" Context="fila">
+                        <span class="@ClaseCelda(fila)">@(fila.EsTotal ? "Total general" : fila.Grupo.Nombre)</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Cantidad de tiendas" Align="Align.End" Context="fila">
+                        <span class="@ClaseCelda(fila)">@Formato.Entero(fila.Grupo.CantidadTiendas)</span>
+                    </TemplateColumn>
+                    @if (MostrarEspaciosTotales)
+                    {
+                        <TemplateColumn Title="Espacios totales" Align="Align.End" Context="fila">
+                            <span class="@ClaseCelda(fila)">@(fila.Grupo.EspaciosTotales is int espacios ? Formato.Entero(espacios) : "—")</span>
+                        </TemplateColumn>
+                    }
+                    <TemplateColumn Title="Espacios asignados" Align="Align.End" Context="fila">
+                        <span class="@ClaseCelda(fila)" title="@Formato.Completo(fila.Grupo.EspaciosAsignados)">@Formato.Decimal4(fila.Grupo.EspaciosAsignados)</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Carga total" Align="Align.End" Context="fila">
+                        <span class="@ClaseCelda(fila)">@Formato.Entero(fila.Grupo.CargaTotal)</span>
+                    </TemplateColumn>
+                </QuickGrid>
+            </div>
+        }
+    </section>
+}

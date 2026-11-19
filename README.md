@@ -1,7 +1,9 @@
 # Abastecimiento Retail — Calculo de Carga por Tienda
 
 API REST en **.NET 8** que calcula cuantas unidades de cada tipo de producto se deben enviar a una tienda, distribuyendo
-en cascada sus espacios fisicos por un arbol comercial de 7 niveles (Lili Pink, Yoi, Yahad).
+en cascada sus espacios fisicos por un arbol comercial de 7 niveles (Lili Pink, Yoi, Yahad). Incluye un **frontend
+Blazor .NET 8** que consume la API (ver [Seccion 5](#5-frontend)); `docker compose up -d --build` levanta los tres
+contenedores: base de datos, API y front.
 
 | Regla | Formula | Donde |
 |---|---|---|
@@ -36,7 +38,8 @@ enunciado) al arrancar. No hay que ejecutar scripts SQL ni `dotnet ef`.
    cd abastecimiento_retail
    ```
 3. Requisitos del equipo: **4 GB de RAM libres** (SQL Server pide minimo 2 GB) y los puertos **8080** (API en Docker),
-   **5080** (API con `dotnet run`) y **14333** (SQL Server en Docker) sin usar.
+   **5080** (API con `dotnet run`), **14333** (SQL Server en Docker), **3000** (front en Docker) y **5090** (front con
+   `dotnet run`) sin usar.
 
 > En Windows los comandos de esta guia van en **PowerShell**; donde la sintaxis cambia se indica la variante.
 
@@ -54,9 +57,10 @@ Comprobar: `docker compose version` debe mostrar la version 2.x.
 **Levantar:**
 ```bash
 cp .env.example .env            # Windows: copy .env.example .env   (contrasena de SQL Server de desarrollo)
-docker compose up -d --build    # SQL Server (db) + API (api); la primera vez descarga ~2 GB de imagenes
-docker compose ps               # esperar a que db diga "healthy" y api "running" (1-2 minutos la primera vez)
+docker compose up -d --build    # SQL Server (db) + API (api) + Front (front); la primera vez descarga ~2 GB de imagenes
+docker compose ps               # esperar a que db diga "healthy" y api/front "running" (1-2 minutos la primera vez)
 ```
+- Front: **http://localhost:3000**
 - Swagger: **http://localhost:8080/swagger**
 - Detener: `docker compose down` (los datos se conservan en el volumen `datos-sql`).
 - Empezar de cero (borra la base): `docker compose down -v`.
@@ -146,6 +150,7 @@ mas que Docker:
 1. Levanta el servicio `db` (SQL Server) si no esta corriendo y espera a que este sano.
 2. Copia el codigo a un contenedor `mcr.microsoft.com/dotnet/sdk:8.0` (sin `bin/`, `obj/`, `.git` ni `.env`).
 3. Corre `dotnet test` contra la base `Abastecimiento_Pruebas` (separada de `Abastecimiento`: la semilla no se altera).
+   Despues corre las pruebas del front (`dotnet test front/Abastecimiento.Front.sln`, sin API ni BD; ver Seccion 5).
 4. Termina con `Test Run Successful` y codigo de salida 0, o con el detalle de cada prueba fallida y codigo distinto de 0.
 
 Si el puerto 14333 ya esta ocupado por otro SQL Server: `SQL_PUERTO=14334 docker compose --profile pruebas run --rm pruebas`.
@@ -293,3 +298,70 @@ significativos completos (ej. 1.67508, sin ceros sobrantes); mostrarlos con 4 de
 - **Suma de porcentajes de hermanos ≤ 1** (no = 1): la semilla es parcial (BEAUTY = 30% sin categorias hermanas).
 - **Ramas incompletas:** si una rama no llega al nivel hoja se devuelve una advertencia, no un error.
 - **Fuera de alcance:** editar/eliminar tiendas y nodos, autenticacion y autorizacion (los roles existen solo como datos).
+
+---
+
+## 5. Frontend
+
+Blazor Web App **.NET 8** (`front/Abastecimiento.Front`, solucion propia `front/Abastecimiento.Front.sln`) con render
+**InteractiveServer** global. Consume la API **solo por HTTP** y desde el servidor de Blazor (no desde el navegador), asi
+que no depende de CORS ni expone la URL de la API. No referencia ningun proyecto del backend: los contratos JSON estan
+copiados como `record` en `front/Abastecimiento.Front/Contratos/`.
+
+### 5.1 Como levantarlo
+| Ruta | Comando | URL |
+|---|---|---|
+| Docker (todo junto) | `docker compose up -d --build` (db + api + front) | http://localhost:3000 |
+| Docker (solo el front) | `docker compose up -d --build front` (arranca `api` y `db` si hacen falta) | http://localhost:3000 |
+| Local (.NET 8 SDK) | API en 5080 (`dotnet run --project src/Abastecimiento.Api --launch-profile http`) y luego `dotnet run --project front/Abastecimiento.Front --launch-profile http` | http://localhost:5090 |
+
+- La URL de la API sale de `Api:UrlBase` (`appsettings.json` → `http://localhost:5080`; en Docker
+  `Api__UrlBase=http://api:8080`). Si no es una URL absoluta, el front no arranca.
+- **Redes de Docker:** `datos` une `db` y `api`; `web` une `api` y `front`. El front solo ve a la API: no puede
+  alcanzar la base de datos (`docker exec abastecimiento-front getent hosts db` no resuelve).
+
+### 5.2 Pantallas → endpoints
+| Pantalla | Ruta | Endpoints | Requerimiento |
+|---|---|---|---|
+| Inicio | `/` | — (buscador por HANNA → `/tiendas/{hanna}`) | — |
+| Tiendas | `/tiendas` | `GET /api/tiendas?marcaTiendaId=&regionalId=`, `GET /api/catalogos/marcas-tienda`, `GET /api/catalogos/regionales` | R1 |
+| Nueva tienda | `/tiendas/nueva` | `GET /api/catalogos/*`, `GET /api/tipos-espacio`, `POST /api/tiendas` | R1 |
+| Detalle y carga | `/tiendas/{hanna}` | `GET /api/tiendas/{hanna}`, `GET /api/carga/{hanna}`, `GET /api/niveles-jerarquia` | R1, R3, R4a |
+| Arbol comercial | `/arbol` | `GET /api/arbol-comercial`, `GET /api/niveles-jerarquia`, `GET/POST /api/conceptos-comerciales`, `POST /api/nodos-comerciales`, `PUT /api/nodos-comerciales/{id}/porcentaje` | R2 |
+| Reportes | `/reportes` | `GET /api/reportes/consolidado?agruparPor=&nivelId=`, `GET /api/niveles-jerarquia` | R4b |
+| Catalogos | `/catalogos` | `GET·POST /api/catalogos/*`, `GET·POST /api/tipos-espacio` | R1 |
+
+`/tiendas/5503` muestra la tabla del enunciado: 819, 670, 482, 469, 288, 238 y el total **6,6000 espacios / 2.966 unidades**.
+
+### 5.3 Decisiones
+- **Capas estilo MVC:** `Contratos/` y `Formularios/` (modelo), `Clientes/` (un cliente tipado por recurso, con interfaz),
+  `.razor` solo con marcado y `.razor.cs` con la logica de pantalla. Ningun componente usa `HttpClient`.
+- **Sin logica de negocio:** el front no recalcula espacios ni cargas; solo da formato (es-CO: 4 decimales en espacios y
+  porcentajes con el valor completo en el `title`, cargas como enteros con punto de miles). Los validadores del front son
+  de forma (maximo 3 tipos de mobiliario, tipos repetidos, porcentaje en (0, 100] con 4 decimales); las reglas de negocio
+  las valida la API y sus errores 400/404/409 se muestran junto al campo o en el resumen del formulario.
+- **Porcentajes:** el usuario escribe en % (`30` o `30,5`) y se envia la fraccion (`0.30`, `0.305`).
+- **Tabla de carga:** las columnas Marca y Perfil se ubican en `ruta[]` por la profundidad del nivel (3 y 6), buscando el
+  nombre del nivel en `GET /api/niveles-jerarquia`, no por posicion.
+- **Bootstrap 5.3.3** (copiado en `wwwroot/lib`, sin CDN) porque la plantilla .NET 8 trae 5.1, que no tiene las variables
+  CSS (`--bs-btn-*`, `--bs-link-color`, `--bs-alert-*`) que usa el tema. Tablas con `QuickGrid` 8.0.11.
+- **Colores:** tokens unicos en `wwwroot/css/tema.css` (paleta #014B43 / #F9ECE5); todo texto ≥ 4.5:1 y toda UI/foco
+  ≥ 3:1, verificado por prueba.
+
+### 5.4 Pruebas del front
+```bash
+docker compose --profile pruebas run --rm pruebas     # backend y luego front, con el SDK de .NET 8
+dotnet test front/Abastecimiento.Front.sln            # solo el front (requiere el runtime de .NET 8)
+```
+91 pruebas xUnit + bUnit, sin API real (clientes con `HttpMessageHandler` falso y componentes con clientes falsos):
+
+| Archivo (`front/tests/Abastecimiento.Front.Pruebas/`) | Que verifica |
+|---|---|
+| `ClientesPruebas.cs` | camelCase y enums en texto; `agruparPor=marcaTienda`; 404 → `ExcepcionApi` con detalle; 400 `errors{}` y `errores[]`; error de red → Estado 0 |
+| `TablaCargaPruebas.cs` | 5503: 6 filas, 819/670/482/469/288/238, total 2.966 y 6,6000; marca y perfil por profundidad del nivel |
+| `FormularioTiendaPruebas.cs` | 4 mobiliarios y tipo repetido no se envian; formulario valido llama a `CrearAsync` una vez; errores 400/409 junto al campo |
+| `FormularioConceptoPruebas.cs` | Nivel hoja sin unidades → invalido; nivel no hoja oculta el campo y envia `null` |
+| `PorcentajePruebas.cs` | `30` → `0.30`; `0`, `101` y mas de 4 decimales → invalidos |
+| `ErroresApiPruebas.cs` | `MensajeError` y ubicacion de las claves PascalCase de la API en el formulario |
+| `ContrasteTemaPruebas.cs` | Cada par de colores del tema con la formula WCAG 2.1 (ej. #F9ECE5 vs #014B43 = 8.69:1) |
+| `ArquitecturaPruebas.cs` | Sin colores fuera de `tema.css`, sin `@code` en `.razor`, sin `HttpClient` en componentes, sin referencias al backend |

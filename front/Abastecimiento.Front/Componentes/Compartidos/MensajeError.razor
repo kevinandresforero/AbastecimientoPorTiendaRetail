@@ -1,0 +1,32 @@
+@if (Error is not null)
+{
+    <div class="alert alert-danger mensaje-error" role="alert">
+        <p class="fw-bold mb-1">Error: @Error.Titulo</p>
+        @if (!string.IsNullOrWhiteSpace(Error.Detalle))
+        {
+            <p class="mb-1">@Error.Detalle</p>
+        }
+        @if (Error.Errores.Count > 0)
+        {
+            <ul class="mb-1">
+                @foreach (var mensaje in Error.Errores)
+                {
+                    <li>@mensaje</li>
+                }
+            </ul>
+        }
+        @if (MostrarErroresPorCampo)
+        {
+            <ul class="mb-1">
+                @foreach (var campo in Error.ErroresPorCampo)
+                {
+                    <li>@campo.Key: @string.Join(" ", campo.Value)</li>
+                }
+            </ul>
+        }
+        @if (MostrarReintentar)
+        {
+            <button type="button" class="btn btn-primary btn-sm mt-2" @onclick="ReintentarAsync">Reintentar</button>
+        }
+    </div>
+}

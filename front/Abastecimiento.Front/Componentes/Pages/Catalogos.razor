@@ -1,0 +1,29 @@
+@page "/catalogos"
+
+<PageTitle>Catálogos · Abastecimiento</PageTitle>
+
+<EncabezadoPagina Titulo="Catálogos" Migas="Migas"
+                  Descripcion="Datos maestros de las tiendas. Los elementos nuevos se agregan a la lista sin recargar la página." />
+
+<ul class="nav nav-tabs mb-4" role="tablist">
+    @foreach (var pestana in Pestanas)
+    {
+        <li class="nav-item" role="presentation">
+            <button type="button" role="tab" id="@($"pestana-{pestana.Clave}")" aria-controls="panel-catalogo"
+                    class="nav-link @(EsActiva(pestana) ? "active" : null)" aria-selected="@(EsActiva(pestana) ? "true" : "false")"
+                    @onclick="() => Activar(pestana)">@pestana.Titulo</button>
+        </li>
+    }
+</ul>
+
+<div role="tabpanel" id="panel-catalogo" aria-labelledby="@($"pestana-{activa.Clave}")">
+    @if (activa.Tipo is TipoCatalogo tipo)
+    {
+        <PanelCatalogo @key="activa.Clave" Tipo="tipo" Titulo="@activa.Titulo" Singular="@activa.Singular"
+                       LongitudMaxima="activa.LongitudMaxima" />
+    }
+    else
+    {
+        <PanelTiposEspacio @key="activa.Clave" />
+    }
+</div>

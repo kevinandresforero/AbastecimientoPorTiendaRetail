@@ -1,0 +1,66 @@
+@page "/tiendas"
+@inherits PaginaBase
+
+<PageTitle>Tiendas · Abastecimiento</PageTitle>
+
+<EncabezadoPagina Titulo="Tiendas" Migas="Migas"
+                  Descripcion="Tiendas registradas con su marca, regional y espacios totales. Abra una tienda para ver su carga.">
+    <Acciones>
+        <a class="btn btn-primary" href="tiendas/nueva"><Icono Nombre="mas" /> Nueva tienda</a>
+    </Acciones>
+</EncabezadoPagina>
+
+<EditForm Model="filtros" class="barra-filtros">
+    <div>
+        <SelectorCatalogo Id="filtro-marca" Etiqueta="Marca de tienda" TextoVacio="Todas" Opciones="marcas"
+                          @bind-Value="filtros.MarcaTiendaId" @bind-Value:after="CargarTiendasAsync" />
+    </div>
+    <div>
+        <SelectorCatalogo Id="filtro-regional" Etiqueta="Regional" TextoVacio="Todas" Opciones="regionales"
+                          @bind-Value="filtros.RegionalId" @bind-Value:after="CargarTiendasAsync" />
+    </div>
+</EditForm>
+
+<MensajeError Error="error" AlReintentar="CargarAsync" />
+
+@if (cargando)
+{
+    <Cargando Texto="Cargando tiendas…" />
+}
+else if (tiendas is not null)
+{
+    <section class="panel" aria-labelledby="titulo-listado">
+        <div class="panel-cabecera">
+            <h2 class="panel-titulo" id="titulo-listado"><Icono Nombre="tiendas" /> Listado</h2>
+            <span class="chip">@Formato.Entero(tiendas.Count) @(tiendas.Count == 1 ? "tienda" : "tiendas")</span>
+        </div>
+        @if (tiendas.Count == 0)
+        {
+            <p class="estado-vacio" role="status">No hay tiendas con los filtros seleccionados.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <QuickGrid Items="TiendasConsulta" Class="table table-striped table-hover align-middle tabla-tiendas">
+                    <TemplateColumn Title="Código HANNA" Context="tienda">
+                        <a class="fw-bold" href="@RutaDetalle(tienda)">@tienda.CodigoHanna</a>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Nombre" Context="tienda">
+                        <a href="@RutaDetalle(tienda)">@tienda.Nombre</a>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Marca" Context="tienda">
+                        <span class="chip">@tienda.MarcaTienda.Nombre</span>
+                    </TemplateColumn>
+                    <PropertyColumn Title="Regional" Property="@(t => t.Regional.Nombre)" />
+                    <PropertyColumn Title="Tipo" Property="@(t => t.TipoTienda.Nombre)" />
+                    <TemplateColumn Title="Espacios totales" Align="Align.End" Context="tienda">
+                        <span class="fw-bold">@Formato.Entero(tienda.EspaciosTotales)</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Acciones" Align="Align.End" Context="tienda">
+                        <a class="btn btn-outline-primary btn-sm" href="@RutaDetalle(tienda)">Ver carga<span class="visually-hidden"> de @tienda.Nombre</span> <Icono Nombre="flecha" /></a>
+                    </TemplateColumn>
+                </QuickGrid>
+            </div>
+        }
+    </section>
+}

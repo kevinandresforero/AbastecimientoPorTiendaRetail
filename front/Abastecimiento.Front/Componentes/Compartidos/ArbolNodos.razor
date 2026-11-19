@@ -1,0 +1,51 @@
+@typeparam TNodo
+
+<div class="d-flex flex-wrap gap-2 arbol-herramientas">
+    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ExpandirTodo">Expandir todo</button>
+    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ContraerTodo">Contraer todo</button>
+</div>
+<div class="table-responsive">
+    <table class="table table-hover align-middle arbol-nodos" aria-label="@Titulo">
+        <thead>
+            <tr>
+                <th scope="col">Nombre</th>
+                @Encabezados
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var fila in FilasVisibles)
+            {
+                <tr @key="fila.Id" class="@ClaseFila(fila)">
+                    <td>
+                        <div class="d-flex align-items-center" style="padding-left: @Sangria(fila)">
+                            @if (fila.TieneHijos)
+                            {
+                                <button type="button" class="btn btn-link btn-sm p-0 me-2 boton-rama"
+                                        aria-expanded="@(EstaContraido(fila) ? "false" : "true")"
+                                        @onclick="() => Alternar(fila)">
+                                    <span aria-hidden="true">@(EstaContraido(fila) ? "▸" : "▾")</span>
+                                    <span class="visually-hidden">@(EstaContraido(fila) ? "Expandir" : "Contraer") @fila.Nombre</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="espaciador-rama me-2" aria-hidden="true"></span>
+                            }
+                            <span>
+                                <span class="d-block">@fila.Nombre</span>
+                                @if (ObtenerDetalle?.Invoke(fila.Nodo) is { Length: > 0 } detalle)
+                                {
+                                    <span class="d-block porcentaje-ruta texto-secundario">@detalle</span>
+                                }
+                            </span>
+                        </div>
+                    </td>
+                    @if (Columnas is not null)
+                    {
+                        @Columnas(fila.Nodo)
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

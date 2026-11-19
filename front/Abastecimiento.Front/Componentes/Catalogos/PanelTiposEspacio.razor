@@ -1,0 +1,87 @@
+@inherits PaginaBase
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <section class="panel" aria-labelledby="titulo-tipos-espacio">
+            <div class="panel-cabecera">
+                <h2 class="panel-titulo" id="titulo-tipos-espacio"><Icono Nombre="espacios" /> Tipos de espacio</h2>
+                @if (!cargando && errorCarga is null)
+                {
+                    <span class="chip">@Formato.Entero(tipos.Count) registros</span>
+                }
+            </div>
+            @if (cargando)
+            {
+                <div class="panel-cuerpo"><Cargando /></div>
+            }
+            else if (errorCarga is not null)
+            {
+                <div class="panel-cuerpo"><MensajeError Error="errorCarga" AlReintentar="CargarAsync" /></div>
+            }
+            else if (tipos.Count == 0)
+            {
+                <p class="estado-vacio" role="status">Aún no hay tipos de espacio.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle tabla-catalogo">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-end">Id</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Categoría</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tipo in tipos)
+                            {
+                                <tr @key="tipo.Id" class="@(tipo.Id == creado?.Id ? "table-active" : null)">
+                                    <td class="text-end texto-secundario">@tipo.Id</td>
+                                    <td>@tipo.Nombre</td>
+                                    <td><span class="chip @(tipo.Categoria == CategoriaEspacio.Perimetral ? "chip-acento" : null)">@Textos.Categoria(tipo.Categoria)</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="panel" aria-labelledby="alta-tipo-espacio">
+            <div class="panel-cabecera">
+                <h3 class="panel-titulo" id="alta-tipo-espacio"><Icono Nombre="mas" /> Agregar tipo de espacio</h3>
+            </div>
+            <div class="panel-cuerpo">
+                @if (creado is not null)
+                {
+                    <div class="alert alert-success" role="status">Creado: @creado.Nombre (@Textos.Categoria(creado.Categoria)).</div>
+                }
+                <EditForm Model="formulario" OnValidSubmit="GuardarAsync">
+                    <DataAnnotationsValidator />
+                    <ResumenErroresApi Error="errorEnvio" CampoConflicto="Nombre" />
+                    <ValidationSummary class="alert alert-danger resumen-validacion" />
+                    <div class="mb-3">
+                        <label class="form-label" for="tipo-espacio-nombre">Nombre</label>
+                        <InputText id="tipo-espacio-nombre" class="form-control" @bind-Value="formulario.Nombre" />
+                        <ValidationMessage For="() => formulario.Nombre" />
+                        <p class="form-text mb-0">Máximo 50 caracteres.</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="tipo-espacio-categoria">Categoría</label>
+                        <InputSelect id="tipo-espacio-categoria" class="form-select" @bind-Value="formulario.Categoria">
+                            <option value="">Seleccione…</option>
+                            @foreach (var categoria in Categorias)
+                            {
+                                <option value="@categoria">@Textos.Categoria(categoria)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => formulario.Categoria" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" disabled="@enviando">@(enviando ? "Guardando…" : "Agregar")</button>
+                </EditForm>
+            </div>
+        </section>
+    </div>
+</div>
