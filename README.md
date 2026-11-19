@@ -312,6 +312,11 @@ Api  ──►  Aplicacion  ──►  Dominio  ◄──  Infraestructura
   para el negocio.
 
 ### Diseno relacional de los 7 niveles (dinamico y normalizado)
+
+#### Shema de Nodos comerciales
+<img width="1838" height="247" alt="image" src="https://github.com/user-attachments/assets/8b2cf5d4-33a3-43d3-8289-5b3f6af36907" />
+
+
 | Tabla | Rol |
 |---|---|
 | `NivelesJerarquia` | Los niveles (Unidad de Negocio … Tipo de Producto) con su `Profundidad`. El nivel hoja **se deriva** (mayor profundidad); no hay un "7" en el codigo. |
@@ -328,6 +333,11 @@ Api  ──►  Aplicacion  ──►  Dominio  ◄──  Infraestructura
   `TiposEspacio` (mobiliario o perimetral) + `EspaciosTienda` (cantidad por tipo). Maximo 3 tipos de mobiliario por tienda.
 
 ---
+
+#### Shema de Tienda
+
+Shema de Tiendas
+<img width="1730" height="722" alt="image" src="https://github.com/user-attachments/assets/467a71f4-1a2e-484f-ad33-416e9d7c5987" />
 
 ## 4. Supuestos y regla de redondeo
 
