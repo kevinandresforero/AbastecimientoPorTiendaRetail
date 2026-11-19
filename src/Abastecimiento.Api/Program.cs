@@ -27,6 +27,16 @@ builder.Services.AgregarAplicacion();
 builder.Services.AddExceptionHandler<ManejadorExcepciones>();
 builder.Services.AddProblemDetails();
 
+// CORS para el front: solo los origenes de "Cors:OrigenesPermitidos" (lista vacia = ninguno). Se expone "Location"
+// para que el front lea la URL del recurso creado (201).
+const string PoliticaCorsFront = "Front";
+var origenesPermitidos = builder.Configuration.GetSection("Cors:OrigenesPermitidos").Get<string[]>() ?? [];
+builder.Services.AddCors(opciones => opciones.AddPolicy(PoliticaCorsFront, politica => politica
+    .WithOrigins(origenesPermitidos)
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .WithExposedHeaders("Location")));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opciones =>
 {
@@ -63,6 +73,9 @@ app.UseExceptionHandler();
 // Swagger habilitado en todos los entornos para que el evaluador lo encuentre sin configuracion.
 app.UseSwagger();
 app.UseSwaggerUI(opciones => opciones.DocumentTitle = "API Abastecimiento Retail");
+
+// Despues del manejador de excepciones: las respuestas de error (problem+json) tambien llevan cabeceras CORS.
+app.UseCors(PoliticaCorsFront);
 
 app.MapControllers();
 

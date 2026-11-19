@@ -1,7 +1,7 @@
 # Un contenedor por servicio, orquestados juntos:  docker compose up -d --build
 #   db  -> SQL Server 2022 (localhost:14333)
 #   api -> ASP.NET Core 8 (http://localhost:8080); aplica las migraciones y la semilla al arrancar
-#   front -> se agregara como tercer servicio cuando exista
+#   front -> se agregara como tercer servicio cuando exista (origen http://localhost:3000, ya permitido por CORS)
 #   pruebas -> (perfil "pruebas") ejecuta TODAS las pruebas con .NET 8 contra el SQL Server del compose:
 #              docker compose --profile pruebas run --rm pruebas
 

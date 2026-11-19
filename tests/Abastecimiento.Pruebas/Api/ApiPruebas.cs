@@ -182,6 +182,38 @@ public class ApiPruebas(FabricaApi fabrica) : IClassFixture<FabricaApi>
     }
 
     [FactSqlServer]
+    public async Task CorsPermiteElOrigenDelFrontYRechazaLosDemas()
+    {
+        static HttpRequestMessage Preflight(string origen)
+        {
+            var solicitud = new HttpRequestMessage(HttpMethod.Options, "/api/carga/5503");
+            solicitud.Headers.Add("Origin", origen);
+            solicitud.Headers.Add("Access-Control-Request-Method", "GET");
+            return solicitud;
+        }
+
+        var permitido = await cliente.SendAsync(Preflight("http://localhost:5173"));
+        var noPermitido = await cliente.SendAsync(Preflight("http://sitio-desconocido.com"));
+
+        Assert.True(permitido.IsSuccessStatusCode);
+        Assert.Equal("http://localhost:5173", Assert.Single(permitido.Headers.GetValues("Access-Control-Allow-Origin")));
+        Assert.False(noPermitido.Headers.Contains("Access-Control-Allow-Origin"));
+    }
+
+    [FactSqlServer]
+    public async Task CorsTambienAplicaALasRespuestasDeError()
+    {
+        var solicitud = new HttpRequestMessage(HttpMethod.Get, "/api/carga/9999");
+        solicitud.Headers.Add("Origin", "http://localhost:3000");
+
+        var respuesta = await cliente.SendAsync(solicitud);
+
+        Assert.Equal(HttpStatusCode.NotFound, respuesta.StatusCode);
+        Assert.Equal("http://localhost:3000", Assert.Single(respuesta.Headers.GetValues("Access-Control-Allow-Origin")));
+        Assert.Contains("Location", Assert.Single(respuesta.Headers.GetValues("Access-Control-Expose-Headers")));
+    }
+
+    [FactSqlServer]
     public async Task SwaggerDocumentaLosEndpoints()
     {
         var documento = await ObtenerJsonAsync("/swagger/v1/swagger.json");

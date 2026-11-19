@@ -106,6 +106,28 @@ curl -si http://localhost:8080/api/carga/9999                                   
 
 Todos los endpoints estan documentados en Swagger con comentarios XML y codigos de respuesta.
 
+### Consumir desde un front
+- **URL base:** `http://localhost:8080` (Docker) o `http://localhost:5080` (`dotnet run`). Contrato OpenAPI en
+  `/swagger/v1/swagger.json` (sirve para generar clientes tipados, ej. `openapi-typescript`).
+- **CORS:** permitidos `http://localhost:3000` (React/Next), `http://localhost:5173` (Vite) y `http://localhost:4200`
+  (Angular), en `appsettings.json` → `Cors:OrigenesPermitidos`. Otro origen sin tocar codigo:
+  `Cors__OrigenesPermitidos__3=http://localhost:8081` (en `.env` o en el `environment` del servicio `api`).
+- **Formato:** JSON en camelCase; enums como texto en camelCase (`"mobiliario"`, `agruparPor=marcaTienda`);
+  decimales completos (formatearlos en el front, ej. 4 decimales); `cargaTotal`/`totalCarga` son enteros.
+- **Errores:** `application/problem+json` con `status`, `title` y `detail`; las reglas de negocio agregan `errores[]` y
+  la validacion de campos agrega `errors{campo: [mensajes]}`. Codigos: 400 datos invalidos, 404 no existe, 409 duplicado.
+- **Creacion:** `POST` responde 201 con el recurso creado; `POST /api/tiendas` ademas trae la cabecera `Location`
+  (expuesta por CORS).
+- **Pantallas tipicas → endpoints:**
+
+| Pantalla | Endpoints |
+|---|---|
+| Listado de tiendas (filtros marca/regional) | `GET /api/tiendas?marcaTiendaId=&regionalId=`, `GET /api/catalogos/marcas-tienda`, `GET /api/catalogos/regionales` |
+| Crear tienda | `GET /api/catalogos/*`, `GET /api/tipos-espacio`, `POST /api/tiendas` |
+| Detalle / carga de una tienda (R3, R4a) | `GET /api/tiendas/{codigoHanna}`, `GET /api/carga/{codigoHanna}` (`lineas` para la tabla, `nodos` para el arbol con espacios) |
+| Arbol comercial (R2) | `GET /api/niveles-jerarquia`, `GET /api/arbol-comercial`, `GET/POST /api/conceptos-comerciales`, `POST /api/nodos-comerciales`, `PUT /api/nodos-comerciales/{id}/porcentaje` |
+| Reportes (R4b) | `GET /api/reportes/consolidado?agruparPor=tienda\|marcaTienda\|regional` y `?agruparPor=nivel&nivelId=3` |
+
 ---
 
 ## 3. Decisiones tecnicas
