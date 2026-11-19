@@ -2,6 +2,7 @@ using Abastecimiento.Dominio.Entidades;
 using Abastecimiento.Dominio.Entidades.Seguridad;
 using Abastecimiento.Dominio.Entidades.Tiendas;
 using Abastecimiento.Infraestructura.Persistencia.Semilla;
+using Abastecimiento.Dominio.Reglas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,7 +18,7 @@ public abstract class ConfiguracionCatalogo<T> : IEntityTypeConfiguration<T> whe
 
     protected abstract string Esquema { get; }
 
-    protected virtual int LongitudNombre => 50;
+    protected virtual int LongitudNombre => LongitudesCampo.NombreCatalogo;
 
     protected virtual IEnumerable<T> Semilla => [];
 
@@ -69,7 +70,7 @@ public class ConfiguracionResponsableVisual : ConfiguracionCatalogo<ResponsableV
 
     protected override string Esquema => Esquemas.Tiendas;
 
-    protected override int LongitudNombre => 100;
+    protected override int LongitudNombre => LongitudesCampo.NombreResponsableVisual;
 }
 
 public class ConfiguracionRol : ConfiguracionCatalogo<Rol>

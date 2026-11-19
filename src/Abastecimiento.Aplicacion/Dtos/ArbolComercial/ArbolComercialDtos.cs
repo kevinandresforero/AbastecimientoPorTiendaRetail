@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Abastecimiento.Dominio.Reglas;
 
 namespace Abastecimiento.Aplicacion.Dtos.ArbolComercial;
 
@@ -40,7 +41,7 @@ public sealed record CrearConceptoSolicitud
     public int NivelJerarquiaId { get; init; }
 
     [Required]
-    [StringLength(100)]
+    [StringLength(LongitudesCampo.NombreConceptoComercial)]
     public string Nombre { get; init; } = string.Empty;
 
     /// <summary>Obligatorio (mayor que 0) solo en el nivel hoja; debe omitirse en los demas niveles.</summary>

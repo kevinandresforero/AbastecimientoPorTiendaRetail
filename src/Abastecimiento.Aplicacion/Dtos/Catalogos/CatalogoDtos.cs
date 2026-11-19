@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Abastecimiento.Dominio.Reglas;
 
 namespace Abastecimiento.Aplicacion.Dtos.Catalogos;
 
@@ -10,6 +11,6 @@ public sealed record CrearCatalogoSolicitud
 {
     /// <summary>Nombre unico dentro del catalogo (maximo 50 caracteres; 100 en responsables visuales).</summary>
     [Required]
-    [StringLength(100)]
+    [StringLength(LongitudesCampo.NombreCatalogoMaximo)]
     public string Nombre { get; init; } = string.Empty;
 }

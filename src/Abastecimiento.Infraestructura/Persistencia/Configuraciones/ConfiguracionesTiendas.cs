@@ -1,5 +1,6 @@
 using Abastecimiento.Dominio.Entidades.Tiendas;
 using Abastecimiento.Infraestructura.Persistencia.Semilla;
+using Abastecimiento.Dominio.Reglas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +13,7 @@ public class ConfiguracionTienda : IEntityTypeConfiguration<Tienda>
         builder.ToTable("Tiendas", Esquemas.Tiendas);
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.Nombre).HasMaxLength(150).IsRequired();
+        builder.Property(t => t.Nombre).HasMaxLength(LongitudesCampo.NombreTienda).IsRequired();
 
         builder.HasIndex(t => t.CodigoHanna).IsUnique().HasDatabaseName("UQ_Tiendas_CodigoHanna");
         builder.HasIndex(t => new { t.RegionalId, t.MarcaTiendaId }).HasDatabaseName("IX_Tiendas_RegionalId_MarcaTiendaId");
@@ -37,8 +38,8 @@ public class ConfiguracionTipoEspacio : IEntityTypeConfiguration<TipoEspacio>
             "CK_TiposEspacio_Categoria", "[Categoria] IN ('Mobiliario','Perimetral')"));
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.Nombre).HasMaxLength(50).IsRequired();
-        builder.Property(t => t.Categoria).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(t => t.Nombre).HasMaxLength(LongitudesCampo.NombreTipoEspacio).IsRequired();
+        builder.Property(t => t.Categoria).HasConversion<string>().HasMaxLength(LongitudesCampo.CategoriaEspacio).IsRequired();
 
         builder.HasIndex(t => t.Nombre).IsUnique().HasDatabaseName("UQ_TiposEspacio_Nombre");
 

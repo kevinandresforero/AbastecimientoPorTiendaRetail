@@ -1,5 +1,6 @@
 using Abastecimiento.Dominio.Entidades.ArbolComercial;
 using Abastecimiento.Infraestructura.Persistencia.Semilla;
+using Abastecimiento.Dominio.Reglas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,7 +15,7 @@ public class ConfiguracionNivelJerarquia : IEntityTypeConfiguration<NivelJerarqu
         builder.HasKey(n => n.Id);
         builder.Property(n => n.Id).ValueGeneratedNever();
 
-        builder.Property(n => n.Nombre).HasMaxLength(50).IsRequired();
+        builder.Property(n => n.Nombre).HasMaxLength(LongitudesCampo.NombreNivelJerarquia).IsRequired();
 
         builder.HasIndex(n => n.Nombre).IsUnique().HasDatabaseName("UQ_NivelesJerarquia_Nombre");
         builder.HasIndex(n => n.Profundidad).IsUnique().HasDatabaseName("UQ_NivelesJerarquia_Profundidad");
@@ -31,7 +32,7 @@ public class ConfiguracionConceptoComercial : IEntityTypeConfiguration<ConceptoC
             "CK_ConceptosComerciales_UnidadesPorEspacio", "[UnidadesPorEspacio] IS NULL OR [UnidadesPorEspacio] > 0"));
         builder.HasKey(c => c.Id);
 
-        builder.Property(c => c.Nombre).HasMaxLength(100).IsRequired();
+        builder.Property(c => c.Nombre).HasMaxLength(LongitudesCampo.NombreConceptoComercial).IsRequired();
 
         builder.HasIndex(c => new { c.NivelJerarquiaId, c.Nombre }).IsUnique()
             .HasDatabaseName("UQ_ConceptosComerciales_NivelJerarquiaId_Nombre");
