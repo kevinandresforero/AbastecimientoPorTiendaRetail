@@ -139,11 +139,81 @@ Todos los endpoints están documentados en **Swagger** con comentarios XML y có
 
 ## 6. Arquitectura y decisiones técnicas
 
+### Despliegue
+
+```mermaid
+flowchart LR
+    U([Navegador]) -->|"localhost:3000"| F
+
+    subgraph web["red web"]
+        F["front<br/>Blazor .NET 8<br/>InteractiveServer"]
+    end
+
+    A["api<br/>ASP.NET Core 8<br/>Swagger · localhost:8080"]
+
+    subgraph datos["red datos"]
+        D[("db<br/>SQL Server 2022<br/>localhost:14333 → 1433")]
+    end
+
+    F -->|"HTTP servidor a servidor<br/>Api__UrlBase=http://api:8080"| A
+    A -->|"EF Core<br/>migraciones + semilla al arrancar"| D
+    V[["volumen datos-sql"]] -.- D
+```
+
+La `api` está en las dos redes; el `front` solo está en `web`, así que únicamente ve a la API y no puede alcanzar la
+base de datos.
+
 ### Clean Architecture
 
+```mermaid
+flowchart TB
+    subgraph Api["Abastecimiento.Api"]
+        MW["ManejadorExcepciones<br/>problem+json"]
+        C1["CargaController"]
+        C2["TiendasController"]
+        C3["ArbolComercial · NodosComerciales · NodosComercialesPorTienda<br/>ConceptosComerciales · NivelesJerarquia"]
+        C4["ReportesController"]
+        C5["Catalogos · TiposEspacio"]
+    end
+
+    subgraph App["Abastecimiento.Aplicacion"]
+        S1["ServicioCarga"]
+        S2["ServicioTiendas"]
+        S3["ServicioArbolComercial"]
+        S4["ServicioReportes"]
+        S5["ServicioCatalogos · ServicioTiposEspacio"]
+        M["MotorCalculoCarga<br/>+ RedondeoHelper"]
+    end
+
+    subgraph Dom["Abastecimiento.Dominio"]
+        R["Reglas<br/>ValidadorArbolComercial · ReglasEspaciosTienda"]
+        I["Interfaces<br/>ITiendaRepositorio · IArbolComercialRepositorio<br/>ICatalogoRepositorio · ITipoEspacioRepositorio · IUnidadDeTrabajo"]
+        E["Entidades y excepciones"]
+    end
+
+    subgraph Inf["Abastecimiento.Infraestructura"]
+        Rep["Repositorios"]
+        Ctx["AbastecimientoDbContext<br/>configuraciones · migraciones · semilla"]
+    end
+
+    DB[("SQL Server")]
+
+    C1 --> S1
+    C2 --> S2
+    C3 --> S3
+    C4 --> S4
+    C5 --> S5
+    S1 --> M
+    S4 --> M
+    S1 & S2 & S3 & S4 --> R
+    S1 & S2 & S3 & S4 & S5 --> I
+    Rep -. implementa .-> I
+    Ctx -. implementa IUnidadDeTrabajo .-> I
+    Rep --> Ctx
+    Ctx --> DB
 ```
-Api  ──►  Aplicacion  ──►  Dominio  ◄──  Infraestructura
-```
+
+Las dependencias apuntan hacia el Dominio: `Api → Aplicacion → Dominio ← Infraestructura`.
 
 | Proyecto | Responsabilidad |
 |---|---|
