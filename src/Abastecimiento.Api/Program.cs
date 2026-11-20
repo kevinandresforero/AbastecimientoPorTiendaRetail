@@ -66,7 +66,12 @@ builder.Services.AddSwaggerGen(opciones =>
     }
 });
 
+builder.Services.AgregarRegistroPeticiones();
+
 var app = builder.Build();
+
+// Primero: registra cada peticion /api con el estado final de la respuesta (tambien los errores del manejador).
+app.UsarRegistroPeticiones();
 
 app.UseExceptionHandler();
 

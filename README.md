@@ -128,19 +128,43 @@ curl -si http://localhost:8080/api/carga/9999                                 # 
 docker compose --profile pruebas run --rm pruebas   # todas (backend + front), requiere Docker
 ```
 
-- **151 backend**: 125 unitarias + 26 de integración/API contra una base aparte (`Abastecimiento_Pruebas`). Cubren la
-  tabla del enunciado para las 3 tiendas, redondeo, un árbol de 8 niveles, aislamiento por tienda, copia de árbol y
-  validaciones de la API.
+- **154 backend**: 125 unitarias + 29 de integración/API contra una base aparte (`Abastecimiento_Pruebas`). Cubren la
+  tabla del enunciado para las 3 tiendas, redondeo, un árbol de 8 niveles, aislamiento por tienda, copia de árbol,
+  validaciones de la API y el log de peticiones.
 - **117 frontend** (xUnit + bUnit, con clientes falsos): componentes, formularios, porcentajes, contraste del tema y
   reglas de arquitectura.
 
 Con el SDK de .NET 8:
 
 ```bash
-dotnet test                                  # 125 unitarias (las 26 de BD se omiten)
+dotnet test                                  # 125 unitarias (las 29 de BD se omiten)
 ABASTECIMIENTO_PRUEBAS_SQL="Server=localhost,14333;Database=Abastecimiento_Pruebas;User Id=sa;Password=Abastecimiento#2026;TrustServerCertificate=True" dotnet test   # todas
 dotnet test front/Abastecimiento.Front.sln   # 117 del front
 ```
+
+### Logs de peticiones
+
+La API escribe **una entrada por cada petición a `/api`** con método, ruta, query, **estado de la respuesta** y duración
+(ms). No registra cabeceras ni cuerpos, para que el log no crezca; Swagger y archivos estáticos no se registran.
+
+```text
+info: Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware[9]
+      Request and Response:
+      Method: GET
+      PathBase:
+      Path: /api/carga/9999
+      QueryString:
+      StatusCode: 404
+      Duration: 69.7831
+```
+
+- Ver los logs: `docker compose logs -f api` (Docker) o la consola de `dotnet run`.
+- Apagarlos sin tocar código: en `appsettings.json` poner
+  `"Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware": "Warning"`, o con la variable de entorno
+  `Logging__LogLevel__Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware=Warning`.
+- Implementación: middleware integrado `HttpLogging` de ASP.NET Core 8, registrado por inyección de dependencias en
+  `src/Abastecimiento.Api/Extensiones/ExtensionesRegistroPeticiones.cs` (`AgregarRegistroPeticiones` /
+  `UsarRegistroPeticiones`). Va primero en el pipeline para registrar el estado final, incluidos los errores 404/409/500.
 
 ---
 
