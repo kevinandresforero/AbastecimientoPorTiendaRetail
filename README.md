@@ -31,17 +31,37 @@ con Docker.
 
 Requiere Docker ([Anexo A](#anexo-a-instalación-de-docker)).
 
-```bash
-git clone https://github.com/kevinandresforero/AbastecimientoPorTiendaRetail.git abastecimiento_retail
-cd abastecimiento_retail
-cp .env.example .env          # Windows: copy .env.example .env
-docker compose pull db
-docker compose up -d --build  # la primera vez descarga ~2 GB y tarda 1-2 min
-docker compose ps             # db: healthy, api y front: running
-```
+1. Clonar el repositorio y crear el archivo de variables de entorno:
 
-- Front: **http://localhost:3000**
-- Swagger: **http://localhost:8080/swagger**
+   ```bash
+   git clone https://github.com/kevinandresforero/AbastecimientoPorTiendaRetail.git abastecimiento_retail
+   cd abastecimiento_retail
+   cp .env.example .env          # Windows: copy .env.example .env
+   ```
+
+2. Descargar primero la imagen de SQL Server. Es la más pesada (más de 1 GB), así que se baja por separado para ver su
+   progreso y no confundir una descarga lenta con un fallo del arranque:
+
+   ```bash
+   docker compose pull db
+   ```
+
+3. Construir y levantar los tres servicios (descarga las imágenes de .NET y compila la API y el front; la primera vez
+   tarda 1-2 min):
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. Comprobar que todo quedó arriba:
+
+   ```bash
+   docker compose ps             # db: healthy, api y front: running
+   ```
+
+5. Abrir:
+   - Front: **http://localhost:3000**
+   - Swagger: **http://localhost:8080/swagger**
 
 | Acción | Comando |
 |---|---|
